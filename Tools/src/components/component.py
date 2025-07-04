@@ -19,7 +19,6 @@ class Component:
     text: str = ""
     min_value: float = 0.0
     max_value: float = 1.0
-    default_value: float = 0.5
     color: str = "#CCCCCC"
     text_color: str = "#000000"
     font_size: int = 12

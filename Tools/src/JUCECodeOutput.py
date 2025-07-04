@@ -10,7 +10,6 @@ class JUCECodeOutput:
     editor_resized_method: str
     processor_header_declarations: str
     processor_constructor_code: str
-    parameter_layout_code: str
 
     def __init__(self, cmp: JUCECodeSections):
         self.editor_header_declarations = cmp.editor_header_declarations
@@ -19,7 +18,6 @@ class JUCECodeOutput:
         self.editor_resized_method = cmp.editor_resized_code
         self.processor_header_declarations = cmp.processor_header_declarations
         self.processor_constructor_code = cmp.processor_constructor_code
-        self.parameter_layout_code = cmp.parameter_layout_code
     
     def get_formatted_output(self) -> str:
         """Get the complete formatted code output as a string"""
@@ -63,8 +61,6 @@ class JUCECodeOutput:
         code += "// ========================================\n\n"
         code += self.processor_constructor_code
         
-        code += "\n" + self.parameter_layout_code
-        
         return code
     
     def get_editor_header_code(self) -> str:
@@ -82,15 +78,11 @@ class JUCECodeOutput:
     def get_processor_constructor_code(self) -> str:
         """Get only the processor constructor code"""
         return self.processor_constructor_code
-        
-    def get_parameter_layout_code(self) -> str:
-        """Get only the parameter layout code"""
-        return self.parameter_layout_code
-    
-    def get_editor_paint_method(self) -> str:
+           
+    def get_editor_paint_code(self) -> str:
         """Get only the editor paint method code"""
         return self.editor_paint_method
     
-    def get_editor_resized_method(self) -> str:
+    def get_editor_resized_code(self) -> str:
         """Get only the editor resized method code"""
         return self.editor_resized_method

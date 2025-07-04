@@ -5,11 +5,12 @@ from .component import Component
 class Knob(Component):
     """Knob/rotary control component"""
     
-    def __init__(self, id: str, x: int, y: int, text: str = ""):
+    def __init__(self, id: str, x: int, y: int, text: str = "", default_value: float = 0.5):
         super().__init__(
             id=id, type='knob', x=x, y=y,
             width=60, height=60, text=text
         )
+        self.default_value: float = default_value
     
     def draw(self, canvas: tk.Canvas) -> None:
         """Draw knob component"""

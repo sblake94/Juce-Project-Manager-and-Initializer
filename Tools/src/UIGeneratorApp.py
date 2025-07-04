@@ -158,7 +158,7 @@ class UIGeneratorApp:
     
     def new_file(self):
         """Create new file"""
-        if messagebox.askokcancel("New File", "Clear current design?"):
+        if messagebox.askokcancel(title="New File", message="Clear current design?", options={ "default": True }):
             self.canvas_frame.components.clear()
             self.canvas_frame.canvas.delete("all")
             self.canvas_frame.selected_component = None
@@ -255,12 +255,12 @@ class UIGeneratorApp:
         
         self._show_export_dialog()
     
-    def _get_juce_target_directory() -> str:
-            """Get target directory for JUCE code export"""
-            return filedialog.askdirectory(
-                title="Select JUCE Target Directory",
-                mustexist=True
-            )
+    def _get_juce_target_directory(self) -> str:
+        """Get target directory for JUCE code export"""
+        return filedialog.askdirectory(
+            title="Select JUCE Target Directory",
+            mustexist=True
+        )
 
     def _show_export_dialog(self):
         """Show export dialog"""

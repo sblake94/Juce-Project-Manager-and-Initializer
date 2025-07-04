@@ -18,7 +18,7 @@ class CodeWriter:
         self.processor_cppctor_genmarker = "// [GENERATED_PROCESSOR_CPP_MARKER]"
         return
 
-    def write_code(self, code: JUCECodeOutput, output_dir: str = None):
+    def write_code(self, code: JUCECodeOutput, output_dir: str = ""):
         if not self._check_files_exist(output_dir):
             raise FileNotFoundError("Required code files do not exist in the output directory.")
         
@@ -123,12 +123,12 @@ if __name__ == "__main__":
     juce_output = JUCECodeOutput(JUCECodeSections(),)
     
     # Assuming JUCECodeOutput has methods to generate code sections
-    juce_output.generate_editor_header_code()
-    juce_output.generate_editor_constructor_code()
-    juce_output.generate_editor_paint_code()
-    juce_output.generate_editor_resized_code()
-    juce_output.generate_processor_header_code()
-    juce_output.generate_processor_constructor_code()
+    juce_output.get_editor_header_code()
+    juce_output.get_editor_constructor_code()
+    juce_output.get_editor_paint_code()
+    juce_output.get_editor_resized_code()
+    juce_output.get_processor_header_code()
+    juce_output.get_processor_constructor_code()
 
     try:
         code_writer.write_code(juce_output, output_dir="path/to/your/juce/project")

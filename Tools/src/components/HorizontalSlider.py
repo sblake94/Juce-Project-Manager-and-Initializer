@@ -4,11 +4,12 @@ from .component import Component
 class HorizontalSlider(Component):
     """Horizontal slider component"""
     
-    def __init__(self, id: str, x: int, y: int, text: str = ""):
+    def __init__(self, id: str, x: int, y: int, text: str = "", default_value: float = 0.5):
         super().__init__(
             id=id, type='horizontalslider', x=x, y=y,
             width=120, height=30, text=text
         )
+        self.default_value: float = default_value
     
     def draw(self, canvas: tk.Canvas) -> None:
         """Draw horizontal slider"""

@@ -4,12 +4,12 @@ import tkinter as tk
 class Label(Component):
     """Label component"""
     
-    def __init__(self, id: str, x: int, y: int, text: str = ""):
+    def __init__(self, id: str, x: int, y: int, text: str = "", default_value: str = "Label Text"):
         super().__init__(
             id=id, type='label', x=x, y=y,
-            width=60, height=20, text=text,
-            default_value="Label Text"
+            width=60, height=20, text=text
         )
+        self.displayed_text: str = default_value
     
     def draw(self, canvas: tk.Canvas) -> None:
         """Draw label component"""
@@ -21,7 +21,7 @@ class Label(Component):
         )
         
         # Draw the text inside the label rectangle
-        display_text = str(self.default_value) if self.default_value is not None else ""
+        display_text = str(self.displayed_text) if hasattr(self, 'default_value') and self.displayed_text is not None else ""
         if display_text:
             canvas.create_text(
                 self.x + self.width//2, self.y + self.height//2,

@@ -5,11 +5,12 @@ from .component import Component
 class TextBox(Component):
     """Text input box component"""
     
-    def __init__(self, id: str, x: int, y: int, text: str = ""):
+    def __init__(self, id: str, x: int, y: int, text: str = "", default_value: str = ""):
         super().__init__(
             id=id, type='textbox', x=x, y=y,
             width=100, height=25, text=text
         )
+        self.default_value: str = default_value
     
     def draw(self, canvas: tk.Canvas) -> None:
         """Draw textbox component"""

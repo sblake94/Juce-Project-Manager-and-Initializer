@@ -18,13 +18,8 @@ class Meter(Component):
             tags=f"comp_{self.id}"
         )
         
-        # Draw level
-        level_height = int(self.height * self.default_value)
-        canvas.create_rectangle(
-            self.x + 2, self.y + self.height - level_height - 2,
-            self.x + self.width - 2, self.y + self.height - 2,
-            fill='#00FF00', tags=f"comp_{self.id}"
-        )
+        # Draw level (no default value, just draw empty meter or implement as needed)
+        pass
     
     def draw_selection_highlight(self, canvas: tk.Canvas) -> None:
         """Override selection highlight for meters (no extra text area)"""

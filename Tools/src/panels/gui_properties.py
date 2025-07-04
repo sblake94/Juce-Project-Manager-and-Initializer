@@ -5,7 +5,7 @@ GUI Properties panel for editing overall plugin GUI properties
 
 import tkinter as tk
 from tkinter import ttk, colorchooser
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, Optional
 
 class GUIProperties:
     """Class to hold overall GUI properties"""
@@ -42,7 +42,7 @@ class GUIProperties:
 class GUIPropertiesPanel:
     """Panel for editing overall GUI properties"""
     
-    def __init__(self, parent, gui_properties: GUIProperties, on_change_callback: Callable = None):
+    def __init__(self, parent, gui_properties: GUIProperties, on_change_callback: Optional[Callable] = None):
         self.parent = parent
         self.gui_properties = gui_properties
         self.on_change_callback = on_change_callback
