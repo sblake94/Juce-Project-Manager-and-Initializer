@@ -1,0 +1,111 @@
+# Python bytecode files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+eggs/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env/
+.venv/
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+.vs/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+coverage.xml
+*.cover
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Logs
+logs/
+*.log
+*.db
+*.sqlite3
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project specific
+Tools/export/
+Tools/output/
+Tools/tmp/
+*.tmp
+
+# JUCE / Audio Plugin related
+Builds/
+JuceLibraryCode/
+*.jucer.user
+*.jucer.user*
+*.filtergraph
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# CMake build directories
+build/
+out/
+debug/
+release/
+Debug/
+Release/
+MinSizeRel/
+RelWithDebInfo/
+
+# CMake Visual Studio integration
+.vs/
+CMakeSettings.json
+CMakeUserPresets.json
+
+# JUCE CMake build artifacts
+*_artefacts/
+*_SharedCode/
+*_Data/
+DerivedData/
+
+# Plugin binaries and installers
+*.vst3
+*.vst
+*.au
+*.component
+*.aax
+*.exe
+*.app
+*.dmg
+*.pkg
+*.msi
+*.zip
+
+# Keep these files even if they match patterns above
+!Tools/requirements.txt

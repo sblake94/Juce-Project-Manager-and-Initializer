@@ -1,0 +1,96 @@
+from dataclasses import dataclass
+from src.JUCECodeSections import JUCECodeSections
+
+@dataclass 
+class JUCECodeOutput:
+    """Complete JUCE code output with all sections organized"""
+    editor_header_declarations: str
+    editor_constructor_code: str
+    editor_paint_method: str
+    editor_resized_method: str
+    processor_header_declarations: str
+    processor_constructor_code: str
+    parameter_layout_code: str
+
+    def __init__(self, cmp: JUCECodeSections):
+        self.editor_header_declarations = cmp.editor_header_declarations
+        self.editor_constructor_code = cmp.editor_constructor_code
+        self.editor_paint_method = cmp.editor_paint_code
+        self.editor_resized_method = cmp.editor_resized_code
+        self.processor_header_declarations = cmp.processor_header_declarations
+        self.processor_constructor_code = cmp.processor_constructor_code
+        self.parameter_layout_code = cmp.parameter_layout_code
+    
+    def get_formatted_output(self) -> str:
+        """Get the complete formatted code output as a string"""
+        code = "// ========================================\n"
+        code += "// JUCE Audio Plugin GUI Code Generation\n"
+        code += "// ========================================\n\n"
+        
+        code += "// ========================================\n"
+        code += "// EDITOR HEADER (.h file)\n"
+        code += "// Add these declarations to your PluginEditor class:\n"
+        code += "// ========================================\n\n"
+        code += self.editor_header_declarations
+        
+        code += "\n// ========================================\n"
+        code += "// EDITOR CONSTRUCTOR (.cpp file)\n"
+        code += "// Add this to your PluginEditor constructor:\n"
+        code += "// ========================================\n\n"
+        code += self.editor_constructor_code
+        
+        code += "\n// ========================================\n"
+        code += "// EDITOR PAINT METHOD (.cpp file)\n"
+        code += "// Add this code to your to your PluginEditor paint method:\n"
+        code += "// ========================================\n\n"
+        code += self.editor_paint_method
+        
+        code += "\n// ========================================\n"
+        code += "// EDITOR RESIZED METHOD (.cpp file)\n"
+        code += "// Add this code to your to your PluginEditor resized method:\n"
+        code += "// ========================================\n\n"
+        code += self.editor_resized_method
+        
+        code += "\n// ========================================\n"
+        code += "// PROCESSOR HEADER (.h file)\n"
+        code += "// Add these declarations to your PluginProcessor class:\n"
+        code += "// ========================================\n\n"
+        code += self.processor_header_declarations
+        
+        code += "\n// ========================================\n"
+        code += "// PROCESSOR CONSTRUCTOR (.cpp file)\n"
+        code += "// Add this to your PluginProcessor constructor:\n"
+        code += "// ========================================\n\n"
+        code += self.processor_constructor_code
+        
+        code += "\n" + self.parameter_layout_code
+        
+        return code
+    
+    def get_editor_header_code(self) -> str:
+        """Get only the editor header declarations"""
+        return self.editor_header_declarations
+    
+    def get_editor_constructor_code(self) -> str:
+        """Get only the editor constructor code"""
+        return self.editor_constructor_code
+        
+    def get_processor_header_code(self) -> str:
+        """Get only the processor header declarations"""
+        return self.processor_header_declarations
+        
+    def get_processor_constructor_code(self) -> str:
+        """Get only the processor constructor code"""
+        return self.processor_constructor_code
+        
+    def get_parameter_layout_code(self) -> str:
+        """Get only the parameter layout code"""
+        return self.parameter_layout_code
+    
+    def get_editor_paint_method(self) -> str:
+        """Get only the editor paint method code"""
+        return self.editor_paint_method
+    
+    def get_editor_resized_method(self) -> str:
+        """Get only the editor resized method code"""
+        return self.editor_resized_method
