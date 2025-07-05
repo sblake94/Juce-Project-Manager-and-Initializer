@@ -58,16 +58,6 @@ class CodeWriter:
         with open(self.editor_header_file, 'r') as f:
             lines = f.readlines()
 
-        # Ensure #include <memory> is present
-        include_memory = '#include <memory>\n'
-        if not any('#include <memory>' in line for line in lines):
-            # Find the last #include line
-            insert_idx = 0
-            for idx, line in enumerate(lines):
-                if line.strip().startswith('#include'):
-                    insert_idx = idx + 1
-            lines.insert(insert_idx, include_memory)
-
         # Replace marker with generated content
         with open(self.editor_header_file, 'w') as f:
             for line in lines:

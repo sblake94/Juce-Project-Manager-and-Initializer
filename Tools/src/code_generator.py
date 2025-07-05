@@ -20,12 +20,13 @@ from .JUCECodeOutput import JUCECodeOutput
 
 class CodeGenerator:
     """Handles code generation in various formats"""
-    
-    def __init__(self, components: Dict[str, Component], canvas_width: int, canvas_height: int):
+
+    def __init__(self, components: Dict[str, Component], canvas_width: int, canvas_height: int, background_color: str = "#DDDDDD"):
         self.components = components
         self.canvas_width = canvas_width
         self.canvas_height = canvas_height
-    
+        self.background_color = background_color
+
     def generate_juce_code(self) -> JUCECodeOutput:
         """Generate complete JUCE C++ code for editor and processor"""
         sections = JUCECodeSections()
@@ -55,8 +56,6 @@ class CodeGenerator:
         # Add canvas size to the editor constructor code
         sections.editor_constructor_code += f"    // Set the size of the editor\n"
         sections.editor_constructor_code += f"    setSize({self.canvas_width}, {self.canvas_height});\n\n"
-        sections.editor_constructor_code += f"    // Call createParameterLayout to initialize parameters\n"
-        sections.editor_constructor_code += f"    createParameterLayout();\n\n"
 
         # Generate paint, resized, and parameter layout methods
         sections.editor_paint_code = self._generate_editor_paint_method()
@@ -74,12 +73,13 @@ class CodeGenerator:
             processor_parameter_layout_code=sections.processor_parameter_layout_code
         ))
     
+
     def _generate_juce_horizontal_slider(self, hslider: HorizontalSlider, hslider_name: str, sections: JUCECodeSections):
         """Generate JUCE horizontal slider code for all sections"""
         # Editor header declarations
         sections.editor_header_declarations += f"    std::unique_ptr<juce::Slider> {hslider_name}Slider;\n"
         sections.editor_header_declarations += f"    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> {hslider_name}SliderAttachment;\n\n"
-        
+
         # Editor constructor code
         sections.editor_constructor_code += f"    // {hslider.text} Horizontal Slider\n"
         sections.editor_constructor_code += f"    {hslider_name}Slider = std::make_unique<juce::Slider>();\n"
@@ -87,8 +87,10 @@ class CodeGenerator:
         sections.editor_constructor_code += f"    {hslider_name}Slider->setRange({hslider.min_value}, {hslider.max_value});\n"
         sections.editor_constructor_code += f"    {hslider_name}Slider->setValue({hslider.default_value});\n"
         sections.editor_constructor_code += f"    {hslider_name}Slider->setBounds({hslider.x}, {hslider.y}, {hslider.width}, {hslider.height});\n"
+        sections.editor_constructor_code += f"    {hslider_name}Slider->setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);\n"
+        sections.editor_constructor_code += f"    {hslider_name}Slider->setPopupDisplayEnabled(true, true, this);\n"
         sections.editor_constructor_code += f"    addAndMakeVisible(*{hslider_name}Slider);\n"
-        sections.editor_constructor_code += f"    {hslider_name}SliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, \"{hslider_name.upper()}\", *{hslider_name}Slider);\n\n"
+        sections.editor_constructor_code += f"    {hslider_name}SliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.m_valueTreeState, \"{hslider_name.upper()}\", *{hslider_name}Slider);\n\n"
 
         # Editor paint method
         sections.editor_paint_code += f"    // {hslider.text} Horizontal Slider Paint\n"
@@ -96,7 +98,7 @@ class CodeGenerator:
         sections.editor_paint_code += f"    g.fillRect({hslider.x}, {hslider.y}, {hslider.width}, {hslider.height});\n"
         sections.editor_paint_code += f"    g.setColour(juce::Colours::black);\n"
         sections.editor_paint_code += f"    g.drawRect({hslider.x}, {hslider.y}, {hslider.width}, {hslider.height});\n\n"
-        
+
         # Editor resized method
         sections.editor_resized_code += f"    // {hslider.text} Horizontal Slider Resized\n"
         sections.editor_resized_code += f"    {hslider_name}Slider->setBounds({hslider.x}, {hslider.y}, {hslider.width}, {hslider.height});\n\n"
@@ -104,18 +106,18 @@ class CodeGenerator:
         # Processor header declarations
         sections.processor_header_declarations += f"    // {hslider.text} parameter\n"
         sections.processor_header_declarations += f"    juce::AudioParameterFloat* {hslider_name}Parameter;\n\n"
-        
+
         # Processor constructor code
         sections.processor_constructor_code += f"    // {hslider.text} Parameter\n"
         sections.processor_constructor_code += f"    {hslider_name}Parameter = dynamic_cast<juce::AudioParameterFloat*>(\n"
-        sections.processor_constructor_code += f"        m_valueTreeState->getParameter(\"{hslider_name.upper()}\"));\n\n"
+        sections.processor_constructor_code += f"        m_valueTreeState.getParameter(\"{hslider_name.upper()}\"));\n\n"
 
     def _generate_juce_vertical_slider(self, vslider: VerticalSlider, vslider_name: str, sections: JUCECodeSections):
         """Generate JUCE vertical slider code for all sections"""
         # Editor header declarations
         sections.editor_header_declarations += f"    std::unique_ptr<juce::Slider> {vslider_name}Slider;\n"
         sections.editor_header_declarations += f"    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> {vslider_name}SliderAttachment;\n\n"
-        
+
         # Editor constructor code
         sections.editor_constructor_code += f"    // {vslider.text} Vertical Slider\n"
         sections.editor_constructor_code += f"    {vslider_name}Slider = std::make_unique<juce::Slider>();\n"
@@ -123,24 +125,37 @@ class CodeGenerator:
         sections.editor_constructor_code += f"    {vslider_name}Slider->setRange({vslider.min_value}, {vslider.max_value});\n"
         sections.editor_constructor_code += f"    {vslider_name}Slider->setValue({vslider.default_value});\n"
         sections.editor_constructor_code += f"    {vslider_name}Slider->setBounds({vslider.x}, {vslider.y}, {vslider.width}, {vslider.height});\n"
+        sections.editor_constructor_code += f"    {vslider_name}Slider->setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);\n"
+        sections.editor_constructor_code += f"    {vslider_name}Slider->setPopupDisplayEnabled(true, true, this);\n"
         sections.editor_constructor_code += f"    addAndMakeVisible(*{vslider_name}Slider);\n"
-        sections.editor_constructor_code += f"    {vslider_name}SliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, \"{vslider_name.upper()}\", *{vslider_name}Slider);\n\n"
-        
+        sections.editor_constructor_code += f"    {vslider_name}SliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.m_valueTreeState, \"{vslider_name.upper()}\", *{vslider_name}Slider);\n\n"
+
+        # Editor paint method
+        sections.editor_paint_code += f"    // {vslider.text} Vertical Slider Paint\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::lightgrey);\n"
+        sections.editor_paint_code += f"    g.fillRect({vslider.x}, {vslider.y}, {vslider.width}, {vslider.height});\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::black);\n"
+        sections.editor_paint_code += f"    g.drawRect({vslider.x}, {vslider.y}, {vslider.width}, {vslider.height});\n\n"
+
+        # Editor resized method
+        sections.editor_resized_code += f"    // {vslider.text} Vertical Slider Resized\n"
+        sections.editor_resized_code += f"    {vslider_name}Slider->setBounds({vslider.x}, {vslider.y}, {vslider.width}, {vslider.height});\n\n"
+
         # Processor header declarations
         sections.processor_header_declarations += f"    // {vslider.text} parameter\n"
         sections.processor_header_declarations += f"    juce::AudioParameterFloat* {vslider_name}Parameter;\n\n"
-        
+
         # Processor constructor code
         sections.processor_constructor_code += f"    // {vslider.text} Parameter\n"
         sections.processor_constructor_code += f"    {vslider_name}Parameter = dynamic_cast<juce::AudioParameterFloat*>(\n"
-        sections.processor_constructor_code += f"        apvts.getParameter(\"{vslider_name.upper()}\", nullptr));\n\n"
+        sections.processor_constructor_code += f"        m_valueTreeState.getParameter(\"{vslider_name.upper()}\"));\n\n"
 
     def _generate_juce_knob(self, knob: Knob, knob_name: str, sections: JUCECodeSections):
         """Generate JUCE knob code for all sections"""
         # Editor header declarations
         sections.editor_header_declarations += f"    std::unique_ptr<juce::Slider> {knob_name}Slider;\n"
         sections.editor_header_declarations += f"    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> {knob_name}SliderAttachment;\n\n"
-        
+
         # Editor constructor code
         sections.editor_constructor_code += f"    // {knob.text} Knob\n"
         sections.editor_constructor_code += f"    {knob_name}Slider = std::make_unique<juce::Slider>();\n"
@@ -148,84 +163,231 @@ class CodeGenerator:
         sections.editor_constructor_code += f"    {knob_name}Slider->setRange({knob.min_value}, {knob.max_value});\n"
         sections.editor_constructor_code += f"    {knob_name}Slider->setValue({knob.default_value});\n"
         sections.editor_constructor_code += f"    {knob_name}Slider->setBounds({knob.x}, {knob.y}, {knob.width}, {knob.height});\n"
+        sections.editor_constructor_code += f"    {knob_name}Slider->setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);\n"
+        sections.editor_constructor_code += f"    {knob_name}Slider->setPopupDisplayEnabled(true, true, this);\n"
         sections.editor_constructor_code += f"    addAndMakeVisible(*{knob_name}Slider);\n"
-        sections.editor_constructor_code += f"    {knob_name}SliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, \"{knob_name.upper()}\", *{knob_name}Slider);\n\n"
-        
+        sections.editor_constructor_code += f"    {knob_name}SliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.m_valueTreeState, \"{knob_name.upper()}\", *{knob_name}Slider);\n\n"
+
+        # Editor paint method
+        sections.editor_paint_code += f"    // {knob.text} Knob Paint\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::lightgrey);\n"
+        sections.editor_paint_code += f"    g.fillRect({knob.x}, {knob.y}, {knob.width}, {knob.height});\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::black);\n"
+        sections.editor_paint_code += f"    g.drawRect({knob.x}, {knob.y}, {knob.width}, {knob.height});\n\n"
+
+        # Editor resized method
+        sections.editor_resized_code += f"    // {knob.text} Knob Resized\n"
+        sections.editor_resized_code += f"    {knob_name}Slider->setBounds({knob.x}, {knob.y}, {knob.width}, {knob.height});\n\n"
+
         # Processor header declarations
         sections.processor_header_declarations += f"    // {knob.text} parameter\n"
         sections.processor_header_declarations += f"    juce::AudioParameterFloat* {knob_name}Parameter;\n\n"
-        
+
         # Processor constructor code
         sections.processor_constructor_code += f"    // {knob.text} Parameter\n"
         sections.processor_constructor_code += f"    {knob_name}Parameter = dynamic_cast<juce::AudioParameterFloat*>(\n"
-        sections.processor_constructor_code += f"        apvts.getParameter(\"{knob_name.upper()}\", nullptr));\n\n"
+        sections.processor_constructor_code += f"        m_valueTreeState.getParameter(\"{knob_name.upper()}\"));\n\n"
 
     def _generate_juce_button(self, button: Button, button_name: str, sections: JUCECodeSections):
         """Generate JUCE button code for all sections"""
         # Editor header declarations
         sections.editor_header_declarations += f"    std::unique_ptr<juce::TextButton> {button_name}Button;\n"
         sections.editor_header_declarations += f"    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> {button_name}ButtonAttachment;\n\n"
-        
+
         # Editor constructor code
         sections.editor_constructor_code += f"    // {button.text} Button\n"
         sections.editor_constructor_code += f"    {button_name}Button = std::make_unique<juce::TextButton>();\n"
         sections.editor_constructor_code += f"    {button_name}Button->setButtonText(\"{button.text}\");\n"
         sections.editor_constructor_code += f"    {button_name}Button->setBounds({button.x}, {button.y}, {button.width}, {button.height});\n"
+        sections.editor_constructor_code += f"    {button_name}Button->setColour(juce::TextButton::buttonColourId, juce::Colours::lightgrey);\n"
+        sections.editor_constructor_code += f"    {button_name}Button->setColour(juce::TextButton::textColourOffId, juce::Colours::black);\n"
         sections.editor_constructor_code += f"    addAndMakeVisible(*{button_name}Button);\n"
-        sections.editor_constructor_code += f"    {button_name}ButtonAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, \"{button_name.upper()}\", *{button_name}Button);\n\n"
-        
+        sections.editor_constructor_code += f"    {button_name}ButtonAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.m_valueTreeState, \"{button_name.upper()}\", *{button_name}Button);\n\n"
+
+        # Editor paint method
+        sections.editor_paint_code += f"    // {button.text} Button Paint\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::lightgrey);\n"
+        sections.editor_paint_code += f"    g.fillRect({button.x}, {button.y}, {button.width}, {button.height});\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::black);\n"
+        sections.editor_paint_code += f"    g.drawRect({button.x}, {button.y}, {button.width}, {button.height});\n\n"
+
+        # Editor resized method
+        sections.editor_resized_code += f"    // {button.text} Button Resized\n"
+        sections.editor_resized_code += f"    {button_name}Button->setBounds({button.x}, {button.y}, {button.width}, {button.height});\n\n"
+
         # Processor header declarations
         sections.processor_header_declarations += f"    // {button.text} parameter\n"
         sections.processor_header_declarations += f"    juce::AudioParameterBool* {button_name}Parameter;\n\n"
-        
+
         # Processor constructor code
         sections.processor_constructor_code += f"    // {button.text} Parameter\n"
         sections.processor_constructor_code += f"    {button_name}Parameter = dynamic_cast<juce::AudioParameterBool*>(\n"
-        sections.processor_constructor_code += f"        apvts.getParameter(\"{button_name.upper()}\", nullptr));\n\n"
+        sections.processor_constructor_code += f"        m_valueTreeState.getParameter(\"{button_name.upper()}\"));\n\n"
 
     def _generate_juce_toggle(self, toggle: Toggle, toggle_name: str, sections: JUCECodeSections):
         """Generate JUCE toggle button code for all sections"""
         # Editor header declarations
         sections.editor_header_declarations += f"    std::unique_ptr<juce::ToggleButton> {toggle_name}Toggle;\n"
         sections.editor_header_declarations += f"    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> {toggle_name}ToggleAttachment;\n\n"
-        
+
         # Editor constructor code
         sections.editor_constructor_code += f"    // {toggle.text} Toggle\n"
         sections.editor_constructor_code += f"    {toggle_name}Toggle = std::make_unique<juce::ToggleButton>();\n"
         sections.editor_constructor_code += f"    {toggle_name}Toggle->setButtonText(\"{toggle.text}\");\n"
         sections.editor_constructor_code += f"    {toggle_name}Toggle->setBounds({toggle.x}, {toggle.y}, {toggle.width}, {toggle.height});\n"
+        sections.editor_constructor_code += f"    {toggle_name}Toggle->setColour(juce::ToggleButton::textColourId, juce::Colours::black);\n"
         sections.editor_constructor_code += f"    addAndMakeVisible(*{toggle_name}Toggle);\n"
-        sections.editor_constructor_code += f"    {toggle_name}ToggleAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, \"{toggle_name.upper()}\", *{toggle_name}Toggle);\n\n"
-        
+        sections.editor_constructor_code += f"    {toggle_name}ToggleAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.m_valueTreeState, \"{toggle_name.upper()}\", *{toggle_name}Toggle);\n\n"
+
+        # Editor paint method
+        sections.editor_paint_code += f"    // {toggle.text} Toggle Paint\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::lightgrey);\n"
+        sections.editor_paint_code += f"    g.fillRect({toggle.x}, {toggle.y}, {toggle.width}, {toggle.height});\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::black);\n"
+        sections.editor_paint_code += f"    g.drawRect({toggle.x}, {toggle.y}, {toggle.width}, {toggle.height});\n\n"
+
+        # Editor resized method
+        sections.editor_resized_code += f"    // {toggle.text} Toggle Resized\n"
+        sections.editor_resized_code += f"    {toggle_name}Toggle->setBounds({toggle.x}, {toggle.y}, {toggle.width}, {toggle.height});\n\n"
+
         # Processor header declarations
         sections.processor_header_declarations += f"    // {toggle.text} parameter\n"
         sections.processor_header_declarations += f"    juce::AudioParameterBool* {toggle_name}Parameter;\n\n"
-        
+
         # Processor constructor code
         sections.processor_constructor_code += f"    // {toggle.text} Parameter\n"
         sections.processor_constructor_code += f"    {toggle_name}Parameter = dynamic_cast<juce::AudioParameterBool*>(\n"
-        sections.processor_constructor_code += f"        apvts.getParameter(\"{toggle_name.upper()}\", nullptr));\n\n"
+        sections.processor_constructor_code += f"        m_valueTreeState.getParameter(\"{toggle_name.upper()}\"));\n\n"
+
+    # def _generate_juce_vertical_slider(self, vslider: VerticalSlider, vslider_name: str, sections: JUCECodeSections):
+    #     """Generate JUCE vertical slider code for all sections"""
+    #     # Editor header declarations
+    #     sections.editor_header_declarations += f"    std::unique_ptr<juce::Slider> {vslider_name}Slider;\n"
+    #     sections.editor_header_declarations += f"    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> {vslider_name}SliderAttachment;\n\n"
+        
+    #     # Editor constructor code
+    #     sections.editor_constructor_code += f"    // {vslider.text} Vertical Slider\n"
+    #     sections.editor_constructor_code += f"    {vslider_name}Slider = std::make_unique<juce::Slider>();\n"
+    #     sections.editor_constructor_code += f"    {vslider_name}Slider->setSliderStyle(juce::Slider::LinearVertical);\n"
+    #     sections.editor_constructor_code += f"    {vslider_name}Slider->setRange({vslider.min_value}, {vslider.max_value});\n"
+    #     sections.editor_constructor_code += f"    {vslider_name}Slider->setValue({vslider.default_value});\n"
+    #     sections.editor_constructor_code += f"    {vslider_name}Slider->setBounds({vslider.x}, {vslider.y}, {vslider.width}, {vslider.height});\n"
+    #     sections.editor_constructor_code += f"    addAndMakeVisible(*{vslider_name}Slider);\n"
+    #     sections.editor_constructor_code += f"    {vslider_name}SliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, \"{vslider_name.upper()}\", *{vslider_name}Slider);\n\n"
+        
+    #     # Processor header declarations
+    #     sections.processor_header_declarations += f"    // {vslider.text} parameter\n"
+    #     sections.processor_header_declarations += f"    juce::AudioParameterFloat* {vslider_name}Parameter;\n\n"
+        
+    #     # Processor constructor code
+    #     sections.processor_constructor_code += f"    // {vslider.text} Parameter\n"
+    #     sections.processor_constructor_code += f"    {vslider_name}Parameter = dynamic_cast<juce::AudioParameterFloat*>(\n"
+    #     sections.processor_constructor_code += f"        apvts.getParameter(\"{vslider_name.upper()}\", nullptr));\n\n"
+
+    # def _generate_juce_knob(self, knob: Knob, knob_name: str, sections: JUCECodeSections):
+    #     """Generate JUCE knob code for all sections"""
+    #     # Editor header declarations
+    #     sections.editor_header_declarations += f"    std::unique_ptr<juce::Slider> {knob_name}Slider;\n"
+    #     sections.editor_header_declarations += f"    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> {knob_name}SliderAttachment;\n\n"
+        
+    #     # Editor constructor code
+    #     sections.editor_constructor_code += f"    // {knob.text} Knob\n"
+    #     sections.editor_constructor_code += f"    {knob_name}Slider = std::make_unique<juce::Slider>();\n"
+    #     sections.editor_constructor_code += f"    {knob_name}Slider->setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);\n"
+    #     sections.editor_constructor_code += f"    {knob_name}Slider->setRange({knob.min_value}, {knob.max_value});\n"
+    #     sections.editor_constructor_code += f"    {knob_name}Slider->setValue({knob.default_value});\n"
+    #     sections.editor_constructor_code += f"    {knob_name}Slider->setBounds({knob.x}, {knob.y}, {knob.width}, {knob.height});\n"
+    #     sections.editor_constructor_code += f"    addAndMakeVisible(*{knob_name}Slider);\n"
+    #     sections.editor_constructor_code += f"    {knob_name}SliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, \"{knob_name.upper()}\", *{knob_name}Slider);\n\n"
+        
+    #     # Processor header declarations
+    #     sections.processor_header_declarations += f"    // {knob.text} parameter\n"
+    #     sections.processor_header_declarations += f"    juce::AudioParameterFloat* {knob_name}Parameter;\n\n"
+        
+    #     # Processor constructor code
+    #     sections.processor_constructor_code += f"    // {knob.text} Parameter\n"
+    #     sections.processor_constructor_code += f"    {knob_name}Parameter = dynamic_cast<juce::AudioParameterFloat*>(\n"
+    #     sections.processor_constructor_code += f"        apvts.getParameter(\"{knob_name.upper()}\", nullptr));\n\n"
+
+    # def _generate_juce_button(self, button: Button, button_name: str, sections: JUCECodeSections):
+    #     """Generate JUCE button code for all sections"""
+    #     # Editor header declarations
+    #     sections.editor_header_declarations += f"    std::unique_ptr<juce::TextButton> {button_name}Button;\n"
+    #     sections.editor_header_declarations += f"    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> {button_name}ButtonAttachment;\n\n"
+        
+    #     # Editor constructor code
+    #     sections.editor_constructor_code += f"    // {button.text} Button\n"
+    #     sections.editor_constructor_code += f"    {button_name}Button = std::make_unique<juce::TextButton>();\n"
+    #     sections.editor_constructor_code += f"    {button_name}Button->setButtonText(\"{button.text}\");\n"
+    #     sections.editor_constructor_code += f"    {button_name}Button->setBounds({button.x}, {button.y}, {button.width}, {button.height});\n"
+    #     sections.editor_constructor_code += f"    addAndMakeVisible(*{button_name}Button);\n"
+    #     sections.editor_constructor_code += f"    {button_name}ButtonAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, \"{button_name.upper()}\", *{button_name}Button);\n\n"
+        
+    #     # Processor header declarations
+    #     sections.processor_header_declarations += f"    // {button.text} parameter\n"
+    #     sections.processor_header_declarations += f"    juce::AudioParameterBool* {button_name}Parameter;\n\n"
+        
+    #     # Processor constructor code
+    #     sections.processor_constructor_code += f"    // {button.text} Parameter\n"
+    #     sections.processor_constructor_code += f"    {button_name}Parameter = dynamic_cast<juce::AudioParameterBool*>(\n"
+    #     sections.processor_constructor_code += f"        apvts.getParameter(\"{button_name.upper()}\", nullptr));\n\n"
+
+    # def _generate_juce_toggle(self, toggle: Toggle, toggle_name: str, sections: JUCECodeSections):
+    #     """Generate JUCE toggle button code for all sections"""
+    #     # Editor header declarations
+    #     sections.editor_header_declarations += f"    std::unique_ptr<juce::ToggleButton> {toggle_name}Toggle;\n"
+    #     sections.editor_header_declarations += f"    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> {toggle_name}ToggleAttachment;\n\n"
+        
+    #     # Editor constructor code
+    #     sections.editor_constructor_code += f"    // {toggle.text} Toggle\n"
+    #     sections.editor_constructor_code += f"    {toggle_name}Toggle = std::make_unique<juce::ToggleButton>();\n"
+    #     sections.editor_constructor_code += f"    {toggle_name}Toggle->setButtonText(\"{toggle.text}\");\n"
+    #     sections.editor_constructor_code += f"    {toggle_name}Toggle->setBounds({toggle.x}, {toggle.y}, {toggle.width}, {toggle.height});\n"
+    #     sections.editor_constructor_code += f"    addAndMakeVisible(*{toggle_name}Toggle);\n"
+    #     sections.editor_constructor_code += f"    {toggle_name}ToggleAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, \"{toggle_name.upper()}\", *{toggle_name}Toggle);\n\n"
+        
+    #     # Processor header declarations
+    #     sections.processor_header_declarations += f"    // {toggle.text} parameter\n"
+    #     sections.processor_header_declarations += f"    juce::AudioParameterBool* {toggle_name}Parameter;\n\n"
+        
+    #     # Processor constructor code
+    #     sections.processor_constructor_code += f"    // {toggle.text} Parameter\n"
+    #     sections.processor_constructor_code += f"    {toggle_name}Parameter = dynamic_cast<juce::AudioParameterBool*>(\n"
+    #     sections.processor_constructor_code += f"        apvts.getParameter(\"{toggle_name.upper()}\", nullptr));\n\n"
 
     def _generate_juce_label(self, label: Label, label_name: str, sections: JUCECodeSections):
-        """Generate JUCE label code for all sections"""
+        """Generate JUCE label code for all sections with consistent styling"""
         # Editor header declarations
         sections.editor_header_declarations += f"    std::unique_ptr<juce::Label> {label_name}Label;\n\n"
-        
+
         # Editor constructor code
         sections.editor_constructor_code += f"    // {label.text} Label\n"
         sections.editor_constructor_code += f"    {label_name}Label = std::make_unique<juce::Label>();\n"
-        sections.editor_constructor_code += f"    {label_name}Label->setText(\"{label.displayed_text}\", juce::dontSendNotification);\n"
+        sections.editor_constructor_code += f"    {label_name}Label->setText(\"{getattr(label, 'displayed_text', label.text)}\", juce::dontSendNotification);\n"
         sections.editor_constructor_code += f"    {label_name}Label->setJustificationType(juce::Justification::centred);\n"
+        sections.editor_constructor_code += f"    {label_name}Label->setFont(juce::Font({getattr(label, 'font_size', 14.0)}.0f));\n"
+        sections.editor_constructor_code += f"    {label_name}Label->setColour(juce::Label::textColourId, juce::Colours::black);\n"
         sections.editor_constructor_code += f"    {label_name}Label->setBounds({label.x}, {label.y}, {label.width}, {label.height});\n"
         sections.editor_constructor_code += f"    addAndMakeVisible(*{label_name}Label);\n\n"
-        
+
+        # Editor paint method
+        sections.editor_paint_code += f"    // {label.text} Label Paint\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::lightgrey);\n"
+        sections.editor_paint_code += f"    g.fillRect({label.x}, {label.y}, {label.width}, {label.height});\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::black);\n"
+        sections.editor_paint_code += f"    g.drawRect({label.x}, {label.y}, {label.width}, {label.height});\n\n"
+
+        # Editor resized method
+        sections.editor_resized_code += f"    // {label.text} Label Resized\n"
+        sections.editor_resized_code += f"    {label_name}Label->setBounds({label.x}, {label.y}, {label.width}, {label.height});\n\n"
+
         # Labels don't typically need processor parameters
 
     def _generate_juce_textbox(self, txtbox: TextBox, txtbox_name: str, sections: JUCECodeSections):
-        """Generate JUCE text editor code for all sections"""
+        """Generate JUCE text editor code for all sections with consistent styling"""
         # Editor header declarations
         sections.editor_header_declarations += f"    std::unique_ptr<juce::TextEditor> {txtbox_name}TextBox;\n\n"
-        
+
         # Editor constructor code
         sections.editor_constructor_code += f"    // {txtbox.text} TextBox\n"
         sections.editor_constructor_code += f"    {txtbox_name}TextBox = std::make_unique<juce::TextEditor>();\n"
@@ -236,31 +398,71 @@ class CodeGenerator:
         sections.editor_constructor_code += f"    {txtbox_name}TextBox->setCaretVisible(true);\n"
         sections.editor_constructor_code += f"    {txtbox_name}TextBox->setPopupMenuEnabled(true);\n"
         sections.editor_constructor_code += f"    {txtbox_name}TextBox->setText(\"{txtbox.text}\");\n"
+        sections.editor_constructor_code += f"    {txtbox_name}TextBox->setFont(juce::Font({getattr(txtbox, 'font_size', 14.0)}.0f));\n"
+        sections.editor_constructor_code += f"    {txtbox_name}TextBox->setColour(juce::TextEditor::backgroundColourId, juce::Colours::white);\n"
+        sections.editor_constructor_code += f"    {txtbox_name}TextBox->setColour(juce::TextEditor::textColourId, juce::Colours::black);\n"
         sections.editor_constructor_code += f"    {txtbox_name}TextBox->setBounds({txtbox.x}, {txtbox.y}, {txtbox.width}, {txtbox.height});\n"
         sections.editor_constructor_code += f"    addAndMakeVisible(*{txtbox_name}TextBox);\n\n"
 
+        # Editor paint method
+        sections.editor_paint_code += f"    // {txtbox.text} TextBox Paint\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::lightgrey);\n"
+        sections.editor_paint_code += f"    g.fillRect({txtbox.x}, {txtbox.y}, {txtbox.width}, {txtbox.height});\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::black);\n"
+        sections.editor_paint_code += f"    g.drawRect({txtbox.x}, {txtbox.y}, {txtbox.width}, {txtbox.height});\n\n"
+
+        # Editor resized method
+        sections.editor_resized_code += f"    // {txtbox.text} TextBox Resized\n"
+        sections.editor_resized_code += f"    {txtbox_name}TextBox->setBounds({txtbox.x}, {txtbox.y}, {txtbox.width}, {txtbox.height});\n\n"
+
+        # TextBoxes don't typically need processor parameters
+
     def _generate_juce_meter(self, meter: Meter, meter_name: str, sections: JUCECodeSections):
-        """Generate JUCE meter code for all sections"""
+        """Generate JUCE meter code for all sections with consistent styling"""
         # Editor header declarations
         sections.editor_header_declarations += f"    // {meter.text} Meter (custom component)\n"
         sections.editor_header_declarations += f"    juce::Rectangle<int> {meter_name}MeterBounds;\n"
         sections.editor_header_declarations += f"    float {meter_name}MeterLevel = 0.0f;\n\n"
-        
+
         # Editor constructor code
         sections.editor_constructor_code += f"    // {meter.text} Meter\n"
         sections.editor_constructor_code += f"    {meter_name}MeterBounds = juce::Rectangle<int>({meter.x}, {meter.y}, {meter.width}, {meter.height});\n\n"
-        
         # Add note about custom meter implementation
         sections.editor_constructor_code += f"    // Note: Implement custom meter drawing in paint() method\n"
         sections.editor_constructor_code += f"    // Use {meter_name}MeterBounds and {meter_name}MeterLevel\n\n"
+
+        # Editor paint method
+        sections.editor_paint_code += f"    // {meter.text} Meter Paint\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::darkgrey);\n"
+        sections.editor_paint_code += f"    g.fillRect({meter_name}MeterBounds);\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::green);\n"
+        sections.editor_paint_code += f"    auto meterHeight = static_cast<int>({meter_name}MeterLevel * {meter_name}MeterBounds.getHeight());\n"
+        sections.editor_paint_code += f"    auto meterFillRect = {meter_name}MeterBounds.withTop({meter_name}MeterBounds.getBottom() - meterHeight);\n"
+        sections.editor_paint_code += f"    g.fillRect(meterFillRect);\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::white);\n"
+        sections.editor_paint_code += f"    g.drawRect({meter_name}MeterBounds, 1);\n\n"
+
+        # Editor resized method
+        sections.editor_resized_code += f"    // {meter.text} Meter Resized\n"
+        sections.editor_resized_code += f"    {meter_name}MeterBounds = juce::Rectangle<int>({meter.x}, {meter.y}, {meter.width}, {meter.height});\n\n"
+
+        # Meters don't typically need processor parameters
         
     def _generate_editor_paint_method(self) -> str:
         """Generate the PluginEditor::paint method code based on components and canvas size"""
         code = ""
-        
+
+
+        if len(self.background_color) == 6:
+            r = int(self.background_color[:2], 16)
+            g = int(self.background_color[2:4], 16)
+            b = int(self.background_color[4:], 16)
+        else:
+            r = g = b = 0
+
         # Background fill
         code += "    // Fill background with gradient\n"
-        code += "    juce::Colour backgroundColour = juce::Colours::darkgrey;\n"
+        code += f"    juce::Colour backgroundColour = juce::Colour({r}, {g}, {b});\n"
         code += "    juce::Colour secondaryColour = backgroundColour.darker(0.2f);\n"
         code += "    \n"
         code += "    g.setGradientFill(juce::ColourGradient(\n"
@@ -308,8 +510,8 @@ class CodeGenerator:
         
         # Draw plugin name as a heading
         code += "    // Draw plugin name/title\n" 
-        code += "    g.setColour(juce::Colours::white);\n"
-        code += "    g.setFont(15.0f);\n"
+        code += "    g.setColour(white);\n"
+        code += "    g.setFont(24.0f);\n"
         code += "    g.drawText(\"My Awesome Plugin\", getLocalBounds().withHeight(20),\n"
         code += "               juce::Justification::centred, true);\n\n"
 
@@ -401,7 +603,7 @@ class CodeGenerator:
                 
             if comp.type in ['horizontalslider', 'verticalslider', 'knob']:
                 code += f"    // {comp.text} Parameter\n"
-                code += f"    m_parameterLayout->add(std::make_unique<juce::AudioParameterFloat>(\n"
+                code += f"    parameterLayout.add(std::make_unique<juce::AudioParameterFloat>(\n"
                 code += f"        \"{comp_name.upper()}\",\n"
                 code += f"        \"{comp.text}\",\n"
                 default_value = getattr(comp, 'default_value', comp.min_value)
@@ -409,7 +611,7 @@ class CodeGenerator:
                 code += f"        {default_value}f));\n\n"
             elif comp.type in ['button', 'toggle']:
                 code += f"    // {comp.text} Parameter\n"
-                code += f"    m_parameterLayout->add(std::make_unique<juce::AudioParameterBool>(\n"
+                code += f"    parameterLayout.add(std::make_unique<juce::AudioParameterBool>(\n"
                 code += f"        \"{comp_name.upper()}\",\n"
                 code += f"        \"{comp.text}\",\n"
                 default_value = getattr(comp, 'default_value', False)

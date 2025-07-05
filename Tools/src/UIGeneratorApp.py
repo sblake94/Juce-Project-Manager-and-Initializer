@@ -298,7 +298,8 @@ class UIGeneratorApp:
             generator = CodeGenerator(
                 self.canvas_frame.components,
                 self.canvas_frame.canvas.winfo_width(),
-                self.canvas_frame.canvas.winfo_height()
+                self.canvas_frame.canvas.winfo_height(),
+                self.gui_properties.background_color,
             )
             
             if format_type == "JUCE":

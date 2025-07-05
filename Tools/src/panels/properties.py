@@ -192,7 +192,10 @@ class PropertiesPanel:
         self.property_widgets['text'].insert(0, component.text)
         
         self.property_widgets['default_value'].delete(0, tk.END)
-        self.property_widgets['default_value'].insert(0, str(component.default_value))
+        if hasattr(component, 'default_value'):
+            self.property_widgets['default_value'].insert(0, str(getattr(component, 'default_value', "")))
+        else:
+            self.property_widgets['default_value'].insert(0, "")
         
         self.property_widgets['min_value'].delete(0, tk.END)
         self.property_widgets['min_value'].insert(0, str(component.min_value))
