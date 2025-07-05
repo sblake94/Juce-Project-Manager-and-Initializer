@@ -16,6 +16,7 @@ class CodeWriter:
         self.header_cppresized_gen_resizedmarker = "// [GENERATED_EDITOR_CPP_RESIZED_MARKER]"
         self.processor_header_genmarker = "// [GENERATED_PROCESSOR_H_MARKER]"
         self.processor_cppctor_genmarker = "// [GENERATED_PROCESSOR_CPP_CTOR_MARKER]"
+        self.processor_parameter_layout_genmarker = "// [GENERATED_PROCESSOR_PARAMETER_LAYOUT_MARKER]"
         return
 
     def write_code(self, code: JUCECodeOutput, output_dir: str = ""):
@@ -112,7 +113,7 @@ class CodeWriter:
             lines = f.readlines()
             f.seek(0)
             for line in lines:
-                if self.editor_header_genmarker in line:
+                if self.processor_header_genmarker in line:
                     f.write(content + "\n")
                 else:
                     f.write(line)
@@ -124,6 +125,17 @@ class CodeWriter:
             f.seek(0)
             for line in lines:
                 if self.processor_cppctor_genmarker in line:
+                    f.write(content + "\n")
+                else:
+                    f.write(line)
+            f.truncate()
+
+    def _write_to_plugin_processor_parameter_layout(self, content: str):
+        with open(self.processor_cpp_file, 'r+') as f:
+            lines = f.readlines()
+            f.seek(0)
+            for line in lines:
+                if self.processor_parameter_layout_genmarker in line:
                     f.write(content + "\n")
                 else:
                     f.write(line)

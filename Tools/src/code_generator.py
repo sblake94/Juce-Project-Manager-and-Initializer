@@ -51,16 +51,17 @@ class CodeGenerator:
             elif isinstance(comp, Meter):
                 self._generate_juce_meter(comp, comp_name, sections)
         
-        # Generate parameter layout
-        parameter_layout = self._generate_parameter_layout()
 
         # Add canvas size to the editor constructor code
         sections.editor_constructor_code += f"    // Set the size of the editor\n"
         sections.editor_constructor_code += f"    setSize({self.canvas_width}, {self.canvas_height});\n\n"
-        
-        # Generate paint and resized methods
+        sections.editor_constructor_code += f"    // Call createParameterLayout to initialize parameters\n"
+        sections.editor_constructor_code += f"    createParameterLayout();\n\n"
+
+        # Generate paint, resized, and parameter layout methods
         sections.editor_paint_code = self._generate_editor_paint_method()
         sections.editor_resized_code = self._generate_editor_resized_method()
+        sections.processor_parameter_layout = self._generate_parameter_layout()
 
         # Return structured output
         return JUCECodeOutput(JUCECodeSections(
@@ -69,7 +70,8 @@ class CodeGenerator:
             editor_paint_code=sections.editor_paint_code,
             editor_resized_code=sections.editor_resized_code,
             processor_header_declarations=sections.processor_header_declarations,
-            processor_constructor_code=sections.processor_constructor_code + parameter_layout
+            processor_constructor_code=sections.processor_constructor_code,
+            processor_parameter_layout=sections.processor_parameter_layout
         ))
     
     def _generate_juce_horizontal_slider(self, hslider: HorizontalSlider, hslider_name: str, sections: JUCECodeSections):
@@ -321,7 +323,7 @@ class CodeGenerator:
 
     def _generate_editor_resized_method(self) -> str:
         """Generate the PluginEditor::resized method code based on components"""
-        code = "void PluginEditor::resized()\n{\n"
+        code = ""
         code += "    // This method is where you should set the bounds of any child\n"
         code += "    // components that your component contains. Component bounds are\n"
         code += "    // already set in the constructor, but you can use this method\n"
@@ -351,7 +353,6 @@ class CodeGenerator:
                     code += f"    // {comp_name}Button->setBounds(bottomSection.removeFromLeft(100).reduced(10));\n"
                     break
         
-        code += "}\n"
         return code
     
     def generate_json_code(self) -> str:
@@ -423,8 +424,5 @@ class CodeGenerator:
         
         code += "    return layout;\n"
         code += "}\n\n"
-        
-        code += "// Don't forget to initialize APVTS in your processor constructor:\n"
-        code += "// apvts(*this, nullptr, \"Parameters\", createParameterLayout())\n"
-        
+                
         return code
