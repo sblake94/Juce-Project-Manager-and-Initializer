@@ -9,13 +9,14 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <memory>
 
 //==============================================================================
 /**
 */
-class PluginProcessor 
+class PluginProcessor  
     : public juce::AudioProcessor
-	, public juce::AudioProcessorValueTreeState::Listener
+    , public juce::AudioProcessorValueTreeState::Listener
 {
 public:
     //==============================================================================
@@ -43,6 +44,7 @@ public:
     bool producesMidi() const override;
     bool isMidiEffect() const override;
     double getTailLengthSeconds() const override;
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
 
     //==============================================================================
     int getNumPrograms() override;
@@ -58,12 +60,16 @@ public:
 private:
     //==============================================================================
     void processDSP(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiBuffer);
-    void createParameterLayout();
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
-	std::unique_ptr<juce::AudioProcessorValueTreeState> m_valueTreeState;
-	std::unique_ptr<juce::AudioProcessorValueTreeState::ParameterLayout> m_parameterLayout;
+	std::unique_ptr<juce::UndoManager> m_undoManagerPtr;
 
-    // [GENERATED_PROCESSOR_H_MARKER]
+	juce::AudioProcessorValueTreeState m_valueTreeState;
+
+    // DeSlider parameter
+    juce::AudioParameterFloat* desliderParameter;
+
+
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)
 };

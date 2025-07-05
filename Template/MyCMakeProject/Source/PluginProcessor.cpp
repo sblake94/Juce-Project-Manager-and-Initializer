@@ -12,29 +12,28 @@
 //==============================================================================
 PluginProcessor::PluginProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       )
+    : AudioProcessor(BusesProperties()
+#if ! JucePlugin_IsMidiEffect
+#if ! JucePlugin_IsSynth
+        .withInput("Input", juce::AudioChannelSet::stereo(), true)
+#endif
+        .withOutput("Output", juce::AudioChannelSet::stereo(), true)
+#endif
+    ), m_valueTreeState(*this, nullptr, "PARAMETERS", createParameterLayout())
 #endif
 {
-    // Create and configure the parameter layout for the audio processor
-    m_valueTreeState = std::make_unique<juce::AudioProcessorValueTreeState>(this);
-
     // [GENERATED_PROCESSOR_CPP_CTOR_MARKER]
 
 	createParameterLayout();
 }
 
-void PluginProcessor::createParameterLayout()
+juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
 {
-	m_parameterLayout = std::make_unique<juce::AudioProcessorValueTreeState::ParameterLayout>();
+	auto parameterLayout = juce::AudioProcessorValueTreeState::ParameterLayout();
     
     // [GENERATED_PROCESSOR_PARAMETER_LAYOUT_MARKER]
+
+    return parameterLayout;
 }
 
 PluginProcessor::~PluginProcessor()
@@ -77,6 +76,11 @@ bool PluginProcessor::isMidiEffect() const
 double PluginProcessor::getTailLengthSeconds() const
 {
     return 0.0;
+}
+
+void PluginProcessor::parameterChanged(const juce::String& parameterID, float newValue)
+{
+    // [GENERATED_PROCESSOR_PARAMETER_CHANGED]
 }
 
 int PluginProcessor::getNumPrograms()

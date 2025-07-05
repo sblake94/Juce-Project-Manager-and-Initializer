@@ -9,4 +9,4 @@ class JUCECodeSections:
     editor_resized_code: str = ""
     processor_header_declarations: str = ""
     processor_constructor_code: str = ""
-    processor_parameter_layout: str = ""
+    processor_parameter_layout_code: str = ""

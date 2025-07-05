@@ -10,6 +10,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PluginProcessor.h"
+#include <memory>
 
 //==============================================================================
 /**
@@ -29,7 +30,10 @@ private:
     // access the processor object that created it.
     PluginProcessor& audioProcessor;
 
-    // [GENERATED_EDITOR_H_MARKER]
+    std::unique_ptr<juce::Slider> desliderSlider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> desliderSliderAttachment;
+
+
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };

@@ -61,7 +61,7 @@ class CodeGenerator:
         # Generate paint, resized, and parameter layout methods
         sections.editor_paint_code = self._generate_editor_paint_method()
         sections.editor_resized_code = self._generate_editor_resized_method()
-        sections.processor_parameter_layout = self._generate_parameter_layout()
+        sections.processor_parameter_layout_code = self._generate_parameter_layout()
 
         # Return structured output
         return JUCECodeOutput(JUCECodeSections(
@@ -71,7 +71,7 @@ class CodeGenerator:
             editor_resized_code=sections.editor_resized_code,
             processor_header_declarations=sections.processor_header_declarations,
             processor_constructor_code=sections.processor_constructor_code,
-            processor_parameter_layout=sections.processor_parameter_layout
+            processor_parameter_layout_code=sections.processor_parameter_layout_code
         ))
     
     def _generate_juce_horizontal_slider(self, hslider: HorizontalSlider, hslider_name: str, sections: JUCECodeSections):
@@ -108,7 +108,7 @@ class CodeGenerator:
         # Processor constructor code
         sections.processor_constructor_code += f"    // {hslider.text} Parameter\n"
         sections.processor_constructor_code += f"    {hslider_name}Parameter = dynamic_cast<juce::AudioParameterFloat*>(\n"
-        sections.processor_constructor_code += f"        apvts.getParameter(\"{hslider_name.upper()}\", nullptr));\n\n"
+        sections.processor_constructor_code += f"        m_valueTreeState->getParameter(\"{hslider_name.upper()}\"));\n\n"
 
     def _generate_juce_vertical_slider(self, vslider: VerticalSlider, vslider_name: str, sections: JUCECodeSections):
         """Generate JUCE vertical slider code for all sections"""
@@ -392,15 +392,8 @@ class CodeGenerator:
     
     def _generate_parameter_layout(self) -> str:
         """Generate JUCE AudioProcessorValueTreeState parameter layout"""
-        code = "// ========================================\n"
-        code += "// PARAMETER LAYOUT\n"
-        code += "// Add this method to your PluginProcessor class:\n"
-        code += "// ========================================\n\n"
-        
-        code += "juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()\n"
-        code += "{\n"
-        code += "    juce::AudioProcessorValueTreeState::ParameterLayout layout;\n\n"
-        
+        code = ""
+
         for comp in self.components.values():
             comp_name = comp.text.replace(" ", "").lower()
             if not comp_name:  # Fallback if text is empty
@@ -408,7 +401,7 @@ class CodeGenerator:
                 
             if comp.type in ['horizontalslider', 'verticalslider', 'knob']:
                 code += f"    // {comp.text} Parameter\n"
-                code += f"    layout.add(std::make_unique<juce::AudioParameterFloat>(\n"
+                code += f"    m_parameterLayout->add(std::make_unique<juce::AudioParameterFloat>(\n"
                 code += f"        \"{comp_name.upper()}\",\n"
                 code += f"        \"{comp.text}\",\n"
                 default_value = getattr(comp, 'default_value', comp.min_value)
@@ -416,13 +409,10 @@ class CodeGenerator:
                 code += f"        {default_value}f));\n\n"
             elif comp.type in ['button', 'toggle']:
                 code += f"    // {comp.text} Parameter\n"
-                code += f"    layout.add(std::make_unique<juce::AudioParameterBool>(\n"
+                code += f"    m_parameterLayout->add(std::make_unique<juce::AudioParameterBool>(\n"
                 code += f"        \"{comp_name.upper()}\",\n"
                 code += f"        \"{comp.text}\",\n"
                 default_value = getattr(comp, 'default_value', False)
                 code += f"        {str(bool(default_value)).lower()}));\n\n"
-        
-        code += "    return layout;\n"
-        code += "}\n\n"
-                
+
         return code

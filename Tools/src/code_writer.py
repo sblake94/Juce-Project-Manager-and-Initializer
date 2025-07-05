@@ -30,6 +30,7 @@ class CodeWriter:
         self._write_to_plugin_editor_resized(code.get_editor_resized_code())
         self._write_to_plugin_processor_h(code.get_processor_header_code())
         self._write_to_plugin_processor_ctor(code.get_processor_constructor_code())
+        self._write_to_plugin_processor_parameter_layout(code.get_processor_parameter_layout_code())
 
     def _check_files_exist(self, output_dir: str) -> bool:
         """Check if the required JUCE code files exist in the output directory."""

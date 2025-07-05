@@ -9,4 +9,6 @@ set(JUCE_DIR "D:/Dev/Visual Studio Projects/JUCE_8.0.8/JUCE")
 add_subdirectory(${JUCE_DIR} JUCE)
 
 # Your plugin
-add_subdirectory(Source)
+add_subdirectory(Source)  
+
+target_compile_definitions(MyPlugin PRIVATE JUCE_VST3_CAN_REPLACE_VST2=0)

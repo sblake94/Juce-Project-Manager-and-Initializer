@@ -10,6 +10,7 @@ class JUCECodeOutput:
     editor_resized_method: str
     processor_header_declarations: str
     processor_constructor_code: str
+    processor_parameter_layout_code: str = ""
 
     def __init__(self, code_sections: JUCECodeSections):
         self.editor_header_declarations = code_sections.editor_header_declarations
@@ -18,6 +19,7 @@ class JUCECodeOutput:
         self.editor_resized_method = code_sections.editor_resized_code
         self.processor_header_declarations = code_sections.processor_header_declarations
         self.processor_constructor_code = code_sections.processor_constructor_code
+        self.processor_parameter_layout_code = code_sections.processor_parameter_layout_code
     
     def get_formatted_output(self) -> str:
         """Get the complete formatted code output as a string"""
@@ -60,6 +62,13 @@ class JUCECodeOutput:
         code += "// Add this to your PluginProcessor constructor:\n"
         code += "// ========================================\n\n"
         code += self.processor_constructor_code
+
+        code += "\n// ========================================\n"
+        code += "// PROCESSOR PARAMETER LAYOUT (.cpp file)\n"
+        code += "// Add this to your PluginProcessor createParameterLayout method:\n"
+        code += "// ========================================\n\n"
+        code += self.processor_parameter_layout_code
+
         
         return code
     
@@ -86,3 +95,7 @@ class JUCECodeOutput:
     def get_editor_resized_code(self) -> str:
         """Get only the editor resized method code"""
         return self.editor_resized_method
+    
+    def get_processor_parameter_layout_code(self) -> str:
+        """Get only the processor parameter layout code"""
+        return self.processor_parameter_layout_code
