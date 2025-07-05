@@ -55,7 +55,9 @@ public:
 
 private:
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)
-
     void processDSP(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiBuffer);
+
+    // [GENERATED_PROCESSOR_H_MARKER]
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)
 };

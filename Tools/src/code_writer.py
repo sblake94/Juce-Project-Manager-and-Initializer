@@ -1,6 +1,6 @@
 # this class is responsible for taking the generated code and writing it to the appropriate files
-from src.JUCECodeOutput import JUCECodeOutput
-from src.JUCECodeSections import JUCECodeSections
+from .JUCECodeOutput import JUCECodeOutput
+from .JUCECodeSections import JUCECodeSections
 
 class CodeWriter:
     def __init__(self):
@@ -15,7 +15,7 @@ class CodeWriter:
         self.header_cpppaint_gen_paintmarker = "// [GENERATED_EDITOR_CPP_PAINT_MARKER]"
         self.header_cppresized_gen_resizedmarker = "// [GENERATED_EDITOR_CPP_RESIZED_MARKER]"
         self.processor_header_genmarker = "// [GENERATED_PROCESSOR_H_MARKER]"
-        self.processor_cppctor_genmarker = "// [GENERATED_PROCESSOR_CPP_MARKER]"
+        self.processor_cppctor_genmarker = "// [GENERATED_PROCESSOR_CPP_CTOR_MARKER]"
         return
 
     def write_code(self, code: JUCECodeOutput, output_dir: str = ""):
@@ -52,15 +52,27 @@ class CodeWriter:
         pass
 
     def _write_to_plugin_editor_h(self, content: str):
-        with open(self.editor_header_genmarker, 'r+') as f:
+        # Read all lines
+        with open(self.editor_header_file, 'r') as f:
             lines = f.readlines()
-            f.seek(0)
+
+        # Ensure #include <memory> is present
+        include_memory = '#include <memory>\n'
+        if not any('#include <memory>' in line for line in lines):
+            # Find the last #include line
+            insert_idx = 0
+            for idx, line in enumerate(lines):
+                if line.strip().startswith('#include'):
+                    insert_idx = idx + 1
+            lines.insert(insert_idx, include_memory)
+
+        # Replace marker with generated content
+        with open(self.editor_header_file, 'w') as f:
             for line in lines:
                 if self.editor_header_genmarker in line:
                     f.write(content + "\n")
                 else:
                     f.write(line)
-            f.truncate()
 
     def _write_to_plugin_editor_ctor(self, content: str):
         with open(self.editor_cpp_file, 'r+') as f:

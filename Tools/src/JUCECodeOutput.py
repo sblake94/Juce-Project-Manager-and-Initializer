@@ -11,13 +11,13 @@ class JUCECodeOutput:
     processor_header_declarations: str
     processor_constructor_code: str
 
-    def __init__(self, cmp: JUCECodeSections):
-        self.editor_header_declarations = cmp.editor_header_declarations
-        self.editor_constructor_code = cmp.editor_constructor_code
-        self.editor_paint_method = cmp.editor_paint_code
-        self.editor_resized_method = cmp.editor_resized_code
-        self.processor_header_declarations = cmp.processor_header_declarations
-        self.processor_constructor_code = cmp.processor_constructor_code
+    def __init__(self, code_sections: JUCECodeSections):
+        self.editor_header_declarations = code_sections.editor_header_declarations
+        self.editor_constructor_code = code_sections.editor_constructor_code
+        self.editor_paint_method = code_sections.editor_paint_code
+        self.editor_resized_method = code_sections.editor_resized_code
+        self.processor_header_declarations = code_sections.processor_header_declarations
+        self.processor_constructor_code = code_sections.processor_constructor_code
     
     def get_formatted_output(self) -> str:
         """Get the complete formatted code output as a string"""

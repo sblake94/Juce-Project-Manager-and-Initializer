@@ -53,11 +53,15 @@ class CodeGenerator:
         
         # Generate parameter layout
         parameter_layout = self._generate_parameter_layout()
+
+        # Add canvas size to the editor constructor code
+        sections.editor_constructor_code += f"    // Set the size of the editor\n"
+        sections.editor_constructor_code += f"    setSize({self.canvas_width}, {self.canvas_height});\n\n"
         
         # Generate paint and resized methods
-        paint_method = self._generate_editor_paint_method()
-        resized_method = self._generate_editor_resized_method()
-        
+        sections.editor_paint_code = self._generate_editor_paint_method()
+        sections.editor_resized_code = self._generate_editor_resized_method()
+
         # Return structured output
         return JUCECodeOutput(JUCECodeSections(
             editor_header_declarations=sections.editor_header_declarations,
@@ -83,7 +87,18 @@ class CodeGenerator:
         sections.editor_constructor_code += f"    {hslider_name}Slider->setBounds({hslider.x}, {hslider.y}, {hslider.width}, {hslider.height});\n"
         sections.editor_constructor_code += f"    addAndMakeVisible(*{hslider_name}Slider);\n"
         sections.editor_constructor_code += f"    {hslider_name}SliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, \"{hslider_name.upper()}\", *{hslider_name}Slider);\n\n"
+
+        # Editor paint method
+        sections.editor_paint_code += f"    // {hslider.text} Horizontal Slider Paint\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::lightgrey);\n"
+        sections.editor_paint_code += f"    g.fillRect({hslider.x}, {hslider.y}, {hslider.width}, {hslider.height});\n"
+        sections.editor_paint_code += f"    g.setColour(juce::Colours::black);\n"
+        sections.editor_paint_code += f"    g.drawRect({hslider.x}, {hslider.y}, {hslider.width}, {hslider.height});\n\n"
         
+        # Editor resized method
+        sections.editor_resized_code += f"    // {hslider.text} Horizontal Slider Resized\n"
+        sections.editor_resized_code += f"    {hslider_name}Slider->setBounds({hslider.x}, {hslider.y}, {hslider.width}, {hslider.height});\n\n"
+
         # Processor header declarations
         sections.processor_header_declarations += f"    // {hslider.text} parameter\n"
         sections.processor_header_declarations += f"    juce::AudioParameterFloat* {hslider_name}Parameter;\n\n"
@@ -239,7 +254,7 @@ class CodeGenerator:
         
     def _generate_editor_paint_method(self) -> str:
         """Generate the PluginEditor::paint method code based on components and canvas size"""
-        code = "void PluginEditor::paint(juce::Graphics& g)\n{\n"
+        code = ""
         
         # Background fill
         code += "    // Fill background with gradient\n"
@@ -301,8 +316,7 @@ class CodeGenerator:
         code += "    g.setFont(10.0f);\n"
         code += "    g.drawText(\"v1.0.0\", getLocalBounds().reduced(5).removeFromBottom(15),\n"
         code += "               juce::Justification::bottomRight, true);\n"
-        
-        code += "}\n"
+    
         return code
 
     def _generate_editor_resized_method(self) -> str:
