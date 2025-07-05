@@ -5,13 +5,14 @@ A drag-and-drop interface designer for audio plugins
 """
 
 import os
+import sys
 import traceback
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from src.code_writer import CodeWriter
 
 # Import our modules
 try:
+    from .code_writer import CodeWriter
     from .components.component import Component
     from .panels.canvas import DragDropCanvas
     from .panels.toolbox import ComponentToolbox
@@ -27,8 +28,8 @@ except ImportError as e:
 
 class UIGeneratorApp:
     """Main application class"""
-    
-    def __init__(self):
+
+    def __init__(self, juce_target_dir: str):
         try:
             self.root = tk.Tk()
             self.root.title("Audio Plugin GUI Designer")
@@ -41,6 +42,8 @@ class UIGeneratorApp:
             self.status_var = tk.StringVar()
             self.status_var.set("Ready")
             self.filename = None
+            
+            self.juce_target_dir = juce_target_dir
             
             self._create_menu()
             self._create_layout()
@@ -257,6 +260,8 @@ class UIGeneratorApp:
     
     def _get_juce_target_directory(self) -> str:
         """Get target directory for JUCE code export"""
+        if self.juce_target_dir:
+            return self.juce_target_dir
         return filedialog.askdirectory(
             title="Select JUCE Target Directory",
             mustexist=True
@@ -414,12 +419,3 @@ class UIGeneratorApp:
         """Show component properties panel and hide GUI properties panel"""
         self.gui_properties_panel.frame.pack_forget()
         self.properties.frame.pack(side='right', fill='y', padx=5, pady=5)
-
-if __name__ == "__main__":
-    try:
-        app = UIGeneratorApp()
-        app.run()
-    except Exception as e:
-        print(f"Application Error: {e}")
-        traceback.print_exc()
-        input("Press Enter to exit...")

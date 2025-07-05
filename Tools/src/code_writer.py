@@ -19,6 +19,7 @@ class CodeWriter:
         return
 
     def write_code(self, code: JUCECodeOutput, output_dir: str = ""):
+        ## we're not checking for files here, but we should be.
         if not self._check_files_exist(output_dir):
             raise FileNotFoundError("Required code files do not exist in the output directory.")
         
@@ -32,10 +33,10 @@ class CodeWriter:
     def _check_files_exist(self, output_dir: str) -> bool:
         """Check if the required JUCE code files exist in the output directory."""
         if output_dir:
-            self.editor_header_file = f"{output_dir}/{self.editor_header_file}"
-            self.editor_cpp_file = f"{output_dir}/{self.editor_cpp_file}"
-            self.processor_header_file = f"{output_dir}/{self.processor_header_file}"
-            self.processor_cpp_file = f"{output_dir}/{self.processor_cpp_file}"
+            self.editor_header_file = f"{output_dir}/Source/{self.editor_header_file}"
+            self.editor_cpp_file = f"{output_dir}/Source/{self.editor_cpp_file}"
+            self.processor_header_file = f"{output_dir}/Source/{self.processor_header_file}"
+            self.processor_cpp_file = f"{output_dir}/Source/{self.processor_cpp_file}"
         try:
             with open(self.editor_header_file, 'r') as f:
                 pass
