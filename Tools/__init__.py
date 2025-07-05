@@ -3,7 +3,7 @@
 Audio Plugin GUI Designer Package
 """
 
-from components.component import Component
+from src.components.component import Component
 from src.panels.canvas import DragDropCanvas
 from src.panels.toolbox import ComponentToolbox
 from src.panels.properties import PropertiesPanel
