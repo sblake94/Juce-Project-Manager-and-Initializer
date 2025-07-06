@@ -1,71 +1,98 @@
-# Audio Plugin GUI Designer (UIGenerator)
 
-A powerful drag-and-drop visual interface designer for creating audio plugin GUIs. Design your plugin's user interface visually and export production-ready code for popular audio frameworks.
 
-![Audio Plugin GUI Designer](screenshot.png)
+# Audio Plugin Project Manager
 
-## 🎯 Overview
+This is a personal tool for initializing, managing, and visually designing audio plugin projects. It lets you create new JUCE-based plugin projects from templates, then design your plugin's user interface visually and export code for audio frameworks.
 
-The Audio Plugin GUI Designer is a desktop application built with Python and Tkinter that allows audio plugin developers to:
 
-- **Visually design** plugin interfaces with drag-and-drop components
-- **Export code** in multiple formats (JUCE C++, XML, JSON)
-- **Save and load** design projects for iterative development
-- **Customize properties** of all UI elements in real-time
 
-## 🚀 Features
+## Overview
+
+The Audio Plugin Project Manager is a Python/Tkinter application for:
+
+- Creating new plugin projects from a JUCE/CMake template
+- Visually designing plugin interfaces with drag-and-drop components
+- Exporting code in multiple formats (JUCE C++, XML, JSON)
+- Saving and loading design projects
+- Customizing properties of all UI elements in real-time
+
+
+
+## Features
+
+
+### Project Initialization
+- Project wizard to start new plugin projects from a template with your chosen name and location
+- Automated setup: copies template, renames files, and prepares CMake/JUCE structure
+- Guided workflow: prompts you to run CMake and launches the UI Designer automatically
+
 
 ### Visual Design Canvas
-- **400x300px default canvas** representing your plugin window
-- **Real-time component rendering** with accurate visual representations
-- **Drag-and-drop positioning** with snap-to-bounds functionality
-- **Visual selection indicators** for active components
+- 400x300px default canvas representing your plugin window
+- Real-time component rendering
+- Drag-and-drop positioning with snap-to-bounds
+- Visual selection indicators for active components
+
 
 ### Component Library
-- **Slider** - Horizontal parameter controls with customizable ranges
-- **Knob** - Rotary controls with visual pointer indicators
-- **Button** - Standard push buttons for triggers and toggles
-- **Toggle Switch** - On/off controls with visual state indication
-- **Label** - Text displays for parameter names and values
-- **TextBox** - Input fields for user text entry
-- **Meter** - Level indicators for audio visualization
+- Slider - Horizontal parameter controls with customizable ranges
+- Knob - Rotary controls with visual pointer indicators
+- Button - Standard push buttons for triggers and toggles
+- Toggle Switch - On/off controls with visual state indication
+- Label - Text displays for parameter names and values
+- TextBox - Input fields for user text entry
+- Meter - Level indicators for audio visualization
+
 
 ### Properties Panel
-- **Position & Size**: Precise X/Y coordinates and width/height control
-- **Text Content**: Customizable labels and display text
-- **Value Ranges**: Min/max values and default settings for controls
-- **Visual Styling**: Background colors, text colors, and font sizes
-- **Real-time Updates**: Changes reflect immediately on the canvas
+- Position & Size: X/Y coordinates and width/height control
+- Text Content: Customizable labels and display text
+- Value Ranges: Min/max values and default settings for controls
+- Visual Styling: Background colors, text colors, and font sizes
+- Real-time Updates: Changes reflect immediately on the canvas
+
 
 ### Code Export System
-- **JUCE C++**: Ready-to-use component initialization code
-- **Generic XML**: Universal layout description format
-- **JSON**: Data exchange and backup format
-- **Copy to Clipboard**: Quick code integration workflow
+- JUCE C++: Component initialization code
+- Generic XML: Universal layout description format
+- JSON: Data exchange and backup format
+- Copy to Clipboard: Quick code integration workflow
 
-## 🛠️ Installation & Setup
+
+
+## Installation & Setup
+
 
 ### Prerequisites
 - Python 3.8 or higher
 - tkinter (usually included with Python)
+
 
 ### Running the Application
 ```bash
 # Navigate to the Tools directory
 cd "d:\Dev\Visual Studio Projects\AudioPlugins\MyAwesomePluginCompany\Tools"
 
-# Run the GUI Designer
-python UIGenerator.py
+# Launch the Project Manager
+python app_project_initializer.py
 ```
 
-## 📖 Usage Guide
+This opens the Project Manager wizard. Use it to create a new plugin project from the template. After project creation and running CMake, the UI Designer will launch for your new project.
+
+
+## Usage Guide
+
+
 
 ### Getting Started
-1. **Launch the application** - Run `UIGenerator.py`
-2. **Add components** - Click buttons in the left toolbox panel
-3. **Position elements** - Drag components around the canvas
-4. **Customize properties** - Select components to edit in the right panel
-5. **Export your design** - Use File → Export Code when ready
+1. Launch the Project Manager: Run `app_project_initializer.py`
+2. Create a new project: Enter your project name and select a location
+3. Run CMake: Follow the prompt to generate your build files
+4. Design your UI: The UI Designer will launch for your new project
+5. Add components: Click buttons in the left toolbox panel
+6. Position elements: Drag components around the canvas
+7. Customize properties: Select components to edit in the right panel
+8. Export your design: Use File → Export Code when ready
 
 ### Component Workflow
 1. **Select a component type** from the toolbox (Slider, Knob, Button, etc.)
@@ -90,7 +117,10 @@ python UIGenerator.py
 - **Save As**: Create new design file copies
 - **Export Code**: Generate code in various formats
 
-## 💻 Code Export Examples
+bypassButton.setBounds(200, 100, 80, 30);
+
+
+## Code Export Examples
 
 ### JUCE C++ Output
 ```cpp
@@ -126,7 +156,8 @@ addAndMakeVisible(bypassButton);
 </gui_layout>
 ```
 
-## 🎨 Design Best Practices
+
+## Design Best Practices
 
 ### Layout Guidelines
 - **Group related controls** - Place similar parameters near each other
@@ -141,7 +172,8 @@ addAndMakeVisible(bypassButton);
 - **Labels** - Essential for parameter identification
 - **Meters** - Great for real-time audio feedback
 
-## 🔧 Keyboard Shortcuts
+
+## Keyboard Shortcuts
 
 - `Ctrl+N` - New design
 - `Ctrl+O` - Open design file
@@ -150,7 +182,8 @@ addAndMakeVisible(bypassButton);
 - `Right-click` - Context menu (Delete, Duplicate, Properties)
 - `Double-click` - Quick properties access
 
-## 📁 File Formats
+
+## File Formats
 
 ### Design Files (.json)
 - **Native format** for saving/loading designs
@@ -164,7 +197,8 @@ addAndMakeVisible(bypassButton);
 - **.json** - Raw component data for custom parsers
 - **.txt** - Plain text for documentation
 
-## 🛡️ Error Handling
+
+## Error Handling
 
 The application includes robust error handling for:
 - **File I/O operations** - Graceful handling of file access issues
@@ -172,7 +206,8 @@ The application includes robust error handling for:
 - **Component positioning** - Boundary checking and snap-to-canvas
 - **Code generation** - Safe string formatting and escaping
 
-## 🔮 Future Enhancements
+
+## Future Enhancements
 
 - **Custom component templates** - Create reusable component groups
 - **Grid snapping and alignment tools** - Precise positioning aids
@@ -180,15 +215,3 @@ The application includes robust error handling for:
 - **Theme system** - Custom color schemes and styling
 - **Undo/Redo functionality** - Full edit history management
 - **Component grouping** - Organize related elements
-
-## 🤝 Contributing
-
-This tool is part of the MyAwesomePluginCompany audio development toolkit. Contributions and feature requests are welcome!
-
-## 📜 License
-
-Part of the MyAwesomePluginCompany audio plugin development suite.
-
----
-
-**Built for audio developers, by audio developers** 🎵

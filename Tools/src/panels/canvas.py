@@ -103,9 +103,10 @@ class DragDropCanvas:
         item = self.canvas.find_closest(event.x, event.y)[0]
         
         # Find which component was clicked
+        tags = self.canvas.gettags(item)
         clicked_comp = None
-        for comp_id, component in self.components.items():
-            if f"comp_{comp_id}" in self.canvas.gettags(item):
+        for comp_id in self.components:
+            if f"comp_{comp_id}" in tags or f"comp_{comp_id}_select" in tags:
                 clicked_comp = comp_id
                 break
         
