@@ -130,19 +130,9 @@ class PropertiesPanel:
             self.current_component.width = int(self.property_widgets['width'].get())
             self.current_component.height = int(self.property_widgets['height'].get())
             self.current_component.text = self.property_widgets['text'].get()
-            
-            # Handle default_value - could be string or float
-            default_val = self.property_widgets['default_value'].get()
-            if self.current_component.type == 'label':
-                # For labels, default_value is the display text
-                self.current_component.default_value = default_val
-            else:
-                # For other components, try to convert to float
-                try:
-                    self.current_component.default_value = float(default_val)
-                except ValueError:
-                    self.current_component.default_value = 0.5
-            
+
+            # TODO: Handle setting default values for components of different types that have it
+
             self.current_component.min_value = float(self.property_widgets['min_value'].get())
             self.current_component.max_value = float(self.property_widgets['max_value'].get())
             self.current_component.font_size = int(self.property_widgets['font_size'].get())
