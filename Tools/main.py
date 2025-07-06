@@ -4,6 +4,7 @@ from tkinter import messagebox
 import subprocess
 import sys
 import traceback
+from src.UIGeneratorApp import UIGeneratorApp
 
 # Static variables
 SRC_DIR = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/Template/MyCMakeProject"  # Example source
@@ -61,11 +62,8 @@ def run_ui_generator(target_dir):
                 return
     # Always run this after CMake is ready
     messagebox.showinfo("Success", f"CMake detected! Continuing to launch the UI generator.")
-    subprocess.Popen([
-        sys.executable,
-        os.path.join(os.path.dirname(__file__), 'app_ui_generator.py'),
-        target_dir
-    ])
+    app = UIGeneratorApp(target_dir)
+    app.run()
 
 def on_create():
     ## check first if the directory we are trying to create already exists
