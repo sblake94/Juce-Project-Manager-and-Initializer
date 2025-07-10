@@ -58,7 +58,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 	inline juce::AudioProcessorValueTreeState& getValueTreeState() { return m_valueTreeState; }
-    inline const juce::AudioProcessorValueTreeState& getValueTreeStatePtr() const { return m_valueTreeState; }
+    inline const juce::AudioProcessorValueTreeState& getValueTreeState() const { return m_valueTreeState; }
 
 private:
     //==============================================================================
