@@ -182,11 +182,11 @@ def create_custom_replacements_table(parent):
     def get_fallback_defaults():
         """Return fallback defaults if template scanning fails."""
         return [
-            ("{{PROJECT_NAME}}", "MyProject"),
+            ("{{PROJECT_NAME}}", "DriveR"),
             ("{{PROJECT_VERSION}}", "1.0.0"),
             ("{{PLUGIN_MANUFACTURER_CODE}}", "Mcmp"),
-            ("{{PLUGIN_CODE}}", "MYPG"),
-            ("{{PRODUCT_NAME}}", "My Product")
+            ("{{PLUGIN_CODE}}", "Drvr"),
+            ("{{PRODUCT_NAME}}", "Drive R"),
         ]
     
     try:
@@ -388,30 +388,94 @@ def get_cmake_field_values(fields, replacements_tree) -> Dict[str, Any]:
 
     return {"custom_replacements": custom_replacements}
 
+def run_cmake_configure(target_dir):
+    """Run CMake configuration for the project."""
+    project_name = os.path.basename(target_dir)
+    build_dir = os.path.join(target_dir, "build")
+    
+    if not os.path.exists(build_dir):
+        os.makedirs(build_dir)
+    
+    # Show progress dialog
+    progress_window = tk.Toplevel()
+    progress_window.title("Running CMake")
+    progress_window.geometry("400x150")
+    progress_window.transient()
+    progress_window.grab_set()
+    
+    # Center the progress window
+    progress_window.update_idletasks()
+    x = (progress_window.winfo_screenwidth() // 2) - (200)
+    y = (progress_window.winfo_screenheight() // 2) - (75)
+    progress_window.geometry(f"400x150+{x}+{y}")
+    
+    status_label = ttk.Label(progress_window, text=f"Configuring CMake for '{project_name}'...")
+    status_label.pack(pady=20)
+    
+    progress_bar = ttk.Progressbar(progress_window, mode='indeterminate')
+    progress_bar.pack(pady=10, padx=20, fill='x')
+    progress_bar.start()
+    
+    # Force window to show
+    progress_window.update()
+    
+    try:
+        # Run CMake configuration
+        result = subprocess.run(
+            ["cmake", ".."],
+            cwd=build_dir,
+            capture_output=True,
+            text=True,
+            timeout=120  # 2 minute timeout
+        )
+        
+        progress_bar.stop()
+        progress_window.destroy()
+        
+        if result.returncode == 0:
+            messagebox.showinfo("Success", f"CMake configuration completed successfully!\nLaunching UI generator...")
+            return True
+        else:
+            error_msg = f"CMake configuration failed!\n\nReturn code: {result.returncode}\n\nError output:\n{result.stderr}"
+            if result.stdout:
+                error_msg += f"\n\nStandard output:\n{result.stdout}"
+            messagebox.showerror("CMake Error", error_msg)
+            return False
+            
+    except subprocess.TimeoutExpired:
+        progress_bar.stop()
+        progress_window.destroy()
+        messagebox.showerror("Timeout", "CMake configuration timed out after 2 minutes.")
+        return False
+        
+    except FileNotFoundError:
+        progress_bar.stop()
+        progress_window.destroy()
+        messagebox.showerror(
+            "CMake Not Found", 
+            "CMake is not installed or not found in PATH.\n\nPlease install CMake and ensure it's available in your system PATH."
+        )
+        return False
+        
+    except Exception as e:
+        progress_bar.stop()
+        progress_window.destroy()
+        messagebox.showerror("Error", f"An error occurred while running CMake:\n\n{str(e)}")
+        return False
+
 def run_ui_generator(target_dir):
     """Run the UI generator application with the target directory."""
     project_name = os.path.basename(target_dir)
-    build_dir = os.path.join(target_dir, "build")
-    if not os.path.exists(build_dir):
-        os.makedirs(build_dir)
-    # Prompt/check only if CMake is not ready
-    should_continue = False
-    while not should_continue:
-        messagebox.showinfo(
-            "Run CMake",
-            f"Project '{project_name}' created at {target_dir}.\n\nPlease open a terminal and run CMake in the build directory:\n\n    cd {build_dir}\n    cmake ..\n\nAfter CMake completes successfully, click OK to continue."
-        )
-        if cmake_ready(target_dir):
-            should_continue = True
-        else:
-            retry = messagebox.askretrycancel(
-                "CMake Not Detected",
-                f"CMake output not found in {target_dir}.\n\nPlease make sure you have run CMake successfully."
-            )
-            if not retry:
-                return
-    # Always run this after CMake is ready
-    messagebox.showinfo("Success", f"CMake detected! Continuing to launch the UI generator.")
+    
+    # Check if CMake is already configured
+    if cmake_ready(target_dir):
+        messagebox.showinfo("CMake Ready", f"CMake is already configured for '{project_name}'.\nLaunching UI generator...")
+    else:
+        # Run CMake configuration automatically
+        if not run_cmake_configure(target_dir):
+            return  # CMake failed, don't continue
+    
+    # Launch the UI generator
     app = UIGeneratorApp(target_dir)
     app.run()
 
