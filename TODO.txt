@@ -1,0 +1,13 @@
+TODO LIST:
+
+UI:
+- Background Colours apply to the Plugin
+- Default styling on controls
+- Why is UI 8 pixels taller and wider?
+
+CMake:
+- CMake parameters permeate through project
+- Automate CMake running in python
+
+Testing:
+- Automate adding to Reaper on build somehow

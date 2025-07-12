@@ -237,11 +237,22 @@ class UIGeneratorApp:
     def _save_to_file(self, filename: str):
         """Save design to file"""
         try:
+            # Get the actual drawing area size by subtracting total widget padding
+            # The canvas widget includes border (bd=2) plus additional internal padding
+            canvas_widget_width = self.canvas_frame.canvas.winfo_width()
+            canvas_widget_height = self.canvas_frame.canvas.winfo_height()
+            
+            # Empirical observation: widget reports 4px larger than intended canvas size
+            # Need to subtract 8px per dimension to get correct size (double the observed offset)
+            total_offset = 8
+            actual_drawing_width = canvas_widget_width - total_offset
+            actual_drawing_height = canvas_widget_height - total_offset
+            
             FileManager.save_design(
                 filename, 
                 self.canvas_frame.components,
-                self.canvas_frame.canvas.winfo_width(),
-                self.canvas_frame.canvas.winfo_height(),
+                actual_drawing_width,
+                actual_drawing_height,
                 self.gui_properties
             )
             
@@ -295,10 +306,25 @@ class UIGeneratorApp:
         
         def update_code():
             format_type = format_var.get()
+            # Get the actual drawing area size by subtracting total widget padding
+            # The canvas widget includes border (bd=2) plus additional internal padding
+            canvas_widget_width = self.canvas_frame.canvas.winfo_width()
+            canvas_widget_height = self.canvas_frame.canvas.winfo_height()
+            
+            # Empirical observation: widget reports 4px larger than intended canvas size
+            # Need to subtract 8px per dimension to get correct size (double the observed offset)
+            total_offset = 8  
+            actual_drawing_width = canvas_widget_width - total_offset
+            actual_drawing_height = canvas_widget_height - total_offset
+            
+            # Debug output (temporary)
+            print(f"DEBUG: Widget size: {canvas_widget_width}x{canvas_widget_height}")
+            print(f"DEBUG: Drawing area: {actual_drawing_width}x{actual_drawing_height}")
+            
             generator = CodeGenerator(
                 self.canvas_frame.components,
-                self.canvas_frame.canvas.winfo_width(),
-                self.canvas_frame.canvas.winfo_height(),
+                actual_drawing_width,
+                actual_drawing_height,
                 self.gui_properties.background_color,
             )
             

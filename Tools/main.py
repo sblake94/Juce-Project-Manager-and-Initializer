@@ -5,12 +5,13 @@ import subprocess
 import sys
 import traceback
 import re
+from typing import Dict, Any
 from src.UIGeneratorApp import UIGeneratorApp
 
 # Static variables
-SRC_DIR = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/Template/MyCMakeProject"  # Example source
-DST_DIR = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/MyAwesomePlugins"  # Example destination
-TEMPLATE_NAME = "MyCMakeProject"  # The name to replace in files and filenames
+SRC_DIR = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/Template/MyCMakeProject"  # Template source
+DST_DIR = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/MyAwesomePlugins"  # Project destination
+TEMPLATE_NAME = "MyCMakeProject"  # The template name to replace in files and filenames
 
 def cmake_ready(build_dir: str) -> bool:
     """Check if CMake has been run successfully by looking for CMakeCache.txt."""
@@ -20,50 +21,64 @@ def cmake_ready(build_dir: str) -> bool:
     return os.path.isfile(cmake_cache)
 
 def copy_and_replace(src, dst, template_name, project_name, cmake_fields=None):
-    """Recursively copy src to dst, replacing template_name with project_name in file contents and names. Skips 'out' directory."""
+    """Recursively copy src to dst, replacing template_name with project_name in file contents and names. 
+    Skips 'out' and '.vs' directories."""
     if not os.path.exists(dst):
         os.makedirs(dst)
+        
     for root, dirs, files in os.walk(src):
         # Skip 'out' and '.vs' directories at any level
         dirs[:] = [d for d in dirs if d not in ('out', '.vs')]
+        
         rel_path = os.path.relpath(root, src)
         target_root = os.path.join(dst, rel_path.replace(template_name, project_name))
+        
         if not os.path.exists(target_root):
             os.makedirs(target_root)
+            
         for file in files:
             src_file = os.path.join(root, file)
             target_file = os.path.join(target_root, file.replace(template_name, project_name))
-            with open(src_file, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
-            content = content.replace(template_name, project_name)
             
-            # Apply CMake field replacements if this is a CMakeLists.txt file
-            if file == "CMakeLists.txt" and cmake_fields:
-                content = apply_cmake_replacements(content, cmake_fields)
-            
-            with open(target_file, 'w', encoding='utf-8') as f:
-                f.write(content)
+            try:
+                with open(src_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                
+                # Replace template name in content
+                content = content.replace(template_name, project_name)
+                
+                # Apply CMake field replacements to all files (not just CMakeLists.txt)
+                # This allows placeholders in source files too
+                if cmake_fields:
+                    content = apply_cmake_replacements(content, cmake_fields)
+                
+                with open(target_file, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                    
+            except Exception as e:
+                print(f"Warning: Could not process file {src_file}: {e}")
+                # Copy file as-is if processing fails
+                try:
+                    with open(src_file, 'rb') as src_f, open(target_file, 'wb') as dst_f:
+                        dst_f.write(src_f.read())
+                except Exception as copy_error:
+                    print(f"Error: Could not copy file {src_file}: {copy_error}")
 
 def apply_cmake_replacements(content, cmake_fields):
-    """Apply CMake field replacements to CMakeLists.txt content."""
-    # Get all replacements from the custom replacements table
+    """Apply CMake field replacements to CMakeLists.txt content.
+    
+    Since templates now use consistent {{PLACEHOLDER}} format,
+    we can simplify the replacement logic.
+    """
     replacements = cmake_fields.get("custom_replacements", {})
     
-    # Apply all replacements
+    # Apply all placeholder replacements
     for placeholder, value in replacements.items():
         if not placeholder or not value:  # Skip empty entries
             continue
-            
-        # Handle direct placeholder replacement
+        
+        # Direct placeholder replacement (templates use {{PLACEHOLDER}} format)
         content = content.replace(placeholder, value)
-        
-        # Replace common CMake patterns for standard CMake variables
-        content = content.replace(f"set({placeholder} \"placeholder\")", f"set({placeholder} \"{value}\")")
-        content = content.replace(f"set({placeholder} placeholder)", f"set({placeholder} {value})")
-        
-        # Handle VERSION in project() declaration if it's a version placeholder
-        if "VERSION" in placeholder.upper():
-            content = re.sub(r'project\([^)]*VERSION\s+[\d.]+', f'project({cmake_fields.get("project_name", "MyProject")} VERSION {value}', content)
     
     return content
 
@@ -96,18 +111,90 @@ def create_custom_replacements_table(parent):
     # Button frame
     button_frame = ttk.Frame(table_frame)
     button_frame.pack(fill="x", pady=5)
+
+    # Find and replace all replaceable strings in all CMakeLists.txt files
+    default_entries = []
     
-    # Add default entries
-    default_entries = [
-        ("{{PROJECT_NAME}}", "MyProject"),
-        ("{{PROJECT_VERSION}}", "1.0.0"),
-        ("{{PROJECT_DESCRIPTION}}", "Audio Plugin Project"),
-        ("{{CMAKE_CXX_STANDARD}}", "17"),
-        ("{{PLUGIN_MANUFACTURER}}", "MyCompany"),
-        ("{{PLUGIN_CATEGORY}}", "Effect"),
-        ("{{PLUGIN_CODE}}", "MYPG"),
-        ("{{COMPANY_NAME}}", "MyCompany")
-    ]
+    def scan_template_files():
+        """Scan template files for placeholders and return sensible defaults."""
+        found_placeholders = set()
+        
+        if not os.path.exists(SRC_DIR):
+            return get_fallback_defaults()
+        
+        # Get all text files that might contain placeholders
+        text_extensions = {'.txt', '.cmake', '.cpp', '.h', '.hpp', '.c', '.cc', '.cxx'}
+        
+        for root, dirs, files in os.walk(SRC_DIR):
+            # Skip build directories
+            dirs[:] = [d for d in dirs if d not in ('out', '.vs', 'build', '.git')]
+            
+            for file in files:
+                file_path = os.path.join(root, file)
+                _, ext = os.path.splitext(file)
+                
+                # Check if file might contain placeholders
+                if ext.lower() in text_extensions or file == 'CMakeLists.txt':
+                    try:
+                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                            content = f.read()
+                        
+                        # Find all {{PLACEHOLDER}} patterns
+                        placeholders = re.findall(r'\{\{([A-Z_][A-Z0-9_]*)\}\}', content)
+                        for placeholder in placeholders:
+                            placeholder_full = f"{{{{{placeholder}}}}}"
+                            found_placeholders.add(placeholder_full)
+                            
+                    except Exception as e:
+                        # Skip files that can't be read
+                        continue
+        
+        # Convert to list with sensible defaults
+        return [(placeholder, get_default_value(placeholder)) for placeholder in sorted(found_placeholders)]
+    
+    def get_default_value(placeholder):
+        """Get a sensible default value for a placeholder."""
+        placeholder_upper = placeholder.upper()
+        
+        if 'VERSION' in placeholder_upper:
+            return "1.0.0"
+        elif 'PROJECT_NAME' in placeholder_upper or placeholder_upper == '{{PROJECT_NAME}}':
+            return "MyProject"
+        elif 'PRODUCT_NAME' in placeholder_upper:
+            return "My Product"
+        elif 'COMPANY' in placeholder_upper or 'MANUFACTURER' in placeholder_upper:
+            if 'CODE' in placeholder_upper:
+                return "Mcmp"  # 4-char manufacturer code
+            else:
+                return "MyCompany"
+        elif 'PLUGIN_CODE' in placeholder_upper:
+            return "MYPG"  # 4-char plugin code
+        elif 'STANDARD' in placeholder_upper:
+            return "17"
+        elif 'CATEGORY' in placeholder_upper:
+            return "Effect"
+        elif 'DESCRIPTION' in placeholder_upper:
+            return "Audio Plugin Project"
+        else:
+            # Generic default: convert SNAKE_CASE to Title Case
+            return placeholder.strip('{}').replace('_', ' ').title()
+    
+    def get_fallback_defaults():
+        """Return fallback defaults if template scanning fails."""
+        return [
+            ("{{PROJECT_NAME}}", "MyProject"),
+            ("{{PROJECT_VERSION}}", "1.0.0"),
+            ("{{PLUGIN_MANUFACTURER_CODE}}", "Mcmp"),
+            ("{{PLUGIN_CODE}}", "MYPG"),
+            ("{{PRODUCT_NAME}}", "My Product")
+        ]
+    
+    try:
+        default_entries = scan_template_files()
+    except Exception as e:
+        print(f"Warning: Template scanning failed, using fallback defaults: {e}")
+        default_entries = get_fallback_defaults()
+
     
     for find_text, replace_text in default_entries:
         tree.insert("", "end", values=(find_text, replace_text))
@@ -268,11 +355,10 @@ def create_cmake_fields_frame(parent):
     return {}
 
 from typing import Dict, Any
-
-def get_cmake_field_values(fields, replacements_tree) -> dict[str, Any]:
+def get_cmake_field_values(fields, replacements_tree) -> Dict[str, Any]:
     """Extract values from custom replacements table."""
-    # Get custom replacements from table
     custom_replacements = {}
+    
     for item in replacements_tree.get_children():
         values = replacements_tree.item(item)["values"]
         if len(values) >= 2:
@@ -281,16 +367,26 @@ def get_cmake_field_values(fields, replacements_tree) -> dict[str, Any]:
             if find_text:  # Only add non-empty find text
                 custom_replacements[find_text] = replace_text
 
-    # Validate version format if present
-    version_keys = [key for key in custom_replacements.keys() if "VERSION" in key.upper()]
-    for version_key in version_keys:
-        version_value = custom_replacements[version_key]
-        if version_value and not re.match(r'^\d+\.\d+\.\d+$', version_value):
-            raise ValueError(f"Invalid version format for {version_key}: {version_value}. Must be in format X.Y.Z (e.g., 1.0.0)")
+    # Validate specific field formats
+    for placeholder, value in custom_replacements.items():
+        placeholder_upper = placeholder.upper()
+        
+        # Version validation
+        if "VERSION" in placeholder_upper and value:
+            if not re.match(r'^\d+\.\d+\.\d+$', value):
+                raise ValueError(f"Invalid version format for {placeholder}: '{value}'. Must be in format X.Y.Z (e.g., 1.0.0)")
+        
+        # Plugin code validation (should be 4 characters)
+        if "PLUGIN_CODE" in placeholder_upper and value:
+            if not re.match(r'^[A-Za-z0-9]{4}$', value):
+                raise ValueError(f"Invalid plugin code format for {placeholder}: '{value}'. Must be exactly 4 alphanumeric characters")
+        
+        # Manufacturer code validation (should be 4 characters)
+        if "MANUFACTURER_CODE" in placeholder_upper and value:
+            if not re.match(r'^[A-Za-z0-9]{4}$', value):
+                raise ValueError(f"Invalid manufacturer code format for {placeholder}: '{value}'. Must be exactly 4 alphanumeric characters")
 
-    # Return the custom replacements directly, not wrapped in another dict
-    result: dict[str, Any] = {"custom_replacements": custom_replacements}
-    return result
+    return {"custom_replacements": custom_replacements}
 
 def run_ui_generator(target_dir):
     """Run the UI generator application with the target directory."""
@@ -320,63 +416,73 @@ def run_ui_generator(target_dir):
     app.run()
 
 def on_create():
-    ## check first if the directory we are trying to create already exists
+    """Handle project creation button click."""
     project_name = entry.get().strip()
     if not project_name:
         messagebox.showerror("Error", "Please enter a project name.")
         return
+        
     target_dir = os.path.join(DST_DIR, project_name)
+    
+    # Check if project already exists
     if os.path.exists(target_dir):
-        nextAction = messagebox.showwarning("Warning", f"Project '{project_name}' already exists. \n\nDo you want to continue with project creation?")
-        if nextAction != 'ok':
+        response = messagebox.askyesno(
+            "Project Exists", 
+            f"Project '{project_name}' already exists.\n\nDo you want to overwrite it?"
+        )
+        if not response:
             messagebox.showinfo("Info", "Project creation cancelled.")
             return
-        else:
-            messagebox.showinfo("Info", "Continuing with project creation.")
     
     # Get CMake field values including custom replacements
     try:
         cmake_field_values = get_cmake_field_values(cmake_fields, replacements_table)
-        # Add project name as a separate field, not part of custom_replacements
         cmake_field_values["project_name"] = project_name
+        
+        # Create the project
         copy_and_replace(SRC_DIR, target_dir, TEMPLATE_NAME, project_name, cmake_field_values)
+        
+        # Launch UI generator
+        run_ui_generator(target_dir)
+        
     except ValueError as e:
         messagebox.showerror("Validation Error", str(e))
         return
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to process CMake fields: {e}")
-        return
-
-    try:
-        run_ui_generator(target_dir)
-    except Exception as e:
         messagebox.showerror("Error", f"Failed to create project: {e}")
         traceback.print_exc()
-        raise e
+        return
 
 if __name__ == "__main__":
+    # Initialize main window
     root = tk.Tk()
     root.title("Project Initializer")
     root.geometry("700x600")
+    root.resizable(True, True)
 
     # Project name section
     name_frame = ttk.Frame(root)
     name_frame.pack(fill="x", padx=10, pady=10)
     
-    label = tk.Label(name_frame, text="Enter new project name:")
-    label.pack(pady=(0, 5))
+    ttk.Label(name_frame, text="Enter new project name:").pack(anchor="w", pady=(0, 5))
+    entry = ttk.Entry(name_frame, width=40, font=("TkDefaultFont", 10))
+    entry.pack(fill="x", pady=5)
+    entry.focus()  # Auto-focus the entry field
 
-    entry = tk.Entry(name_frame, width=30)
-    entry.pack(pady=5)
-
-    # CMake configuration section
+    # CMake configuration section (simplified info frame)
     cmake_fields = create_cmake_fields_frame(root)
     
     # Custom replacements table
     replacements_table = create_custom_replacements_table(root)
 
     # Create button
-    create_btn = tk.Button(root, text="Create Project", command=on_create)
-    create_btn.pack(pady=15)
+    button_frame = ttk.Frame(root)
+    button_frame.pack(fill="x", padx=10, pady=15)
+    
+    create_btn = ttk.Button(button_frame, text="Create Project", command=on_create)
+    create_btn.pack()
+
+    # Bind Enter key to create project
+    root.bind('<Return>', lambda event: on_create())
 
     root.mainloop()
