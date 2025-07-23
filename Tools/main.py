@@ -2,10 +2,9 @@ import os
 import tkinter as tk
 from tkinter import messagebox, ttk
 import subprocess
-import sys
 import traceback
 import re
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 from src.UIGeneratorApp import UIGeneratorApp
 
 # Static variables
@@ -19,6 +18,147 @@ def cmake_ready(build_dir: str) -> bool:
     ## make sure cmake_cache uses consistent path separators
     cmake_cache = os.path.normpath(cmake_cache)
     return os.path.isfile(cmake_cache)
+
+def scan_existing_projects() -> List[Tuple[str, str]]:
+    """Scan the DST_DIR for existing plugin projects."""
+    projects = []
+    
+    if not os.path.exists(DST_DIR):
+        return projects
+    
+    try:
+        for item in os.listdir(DST_DIR):
+            project_path = os.path.join(DST_DIR, item)
+            
+            # Check if it's a directory and contains CMakeLists.txt
+            if os.path.isdir(project_path):
+                cmake_file = os.path.join(project_path, "CMakeLists.txt")
+                if os.path.exists(cmake_file):
+                    # Get project info
+                    project_info = get_project_info(project_path)
+                    projects.append((item, project_info))
+        
+        # Sort by project name
+        projects.sort(key=lambda x: x[0].lower())
+        
+    except Exception as e:
+        print(f"Warning: Failed to scan existing projects: {e}")
+    
+    return projects
+
+def get_project_info(project_path: str) -> str:
+    """Get brief info about a project by examining its CMakeLists.txt file."""
+    try:
+        cmake_file = os.path.join(project_path, "CMakeLists.txt")
+        if not os.path.exists(cmake_file):
+            return "No CMakeLists.txt found"
+        
+        with open(cmake_file, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+        
+        # Extract some key information
+        info_parts = []
+        
+        # Look for project name
+        project_match = re.search(r'project\s*\(\s*([^)]+)\)', content, re.IGNORECASE)
+        if project_match:
+            info_parts.append(f"Project: {project_match.group(1).strip()}")
+        
+        # Look for JUCE plugin info
+        if 'juce_add_plugin' in content.lower():
+            # Extract product name
+            product_match = re.search(r'PRODUCT_NAME\s+"([^"]+)"', content)
+            if product_match:
+                info_parts.append(f"Product: {product_match.group(1)}")
+            
+            # Extract formats
+            formats_match = re.search(r'FORMATS\s+([^\n]+)', content)
+            if formats_match:
+                formats = formats_match.group(1).strip()
+                info_parts.append(f"Formats: {formats}")
+        
+        # Check modification time
+        mod_time = os.path.getmtime(cmake_file)
+        import datetime
+        mod_date = datetime.datetime.fromtimestamp(mod_time).strftime("%Y-%m-%d")
+        info_parts.append(f"Modified: {mod_date}")
+        
+        return " | ".join(info_parts) if info_parts else "JUCE Plugin Project"
+        
+    except Exception as e:
+        return f"Error reading project: {str(e)}"
+
+def extract_cmake_values_from_project(project_path: str) -> Dict[str, str]:
+    """Extract CMake placeholder values from an existing project."""
+    cmake_values = {}
+    
+    try:
+        # Check main CMakeLists.txt
+        cmake_file = os.path.join(project_path, "CMakeLists.txt")
+        if os.path.exists(cmake_file):
+            cmake_values.update(_extract_values_from_file(cmake_file))
+        
+        # Check Source/CMakeLists.txt
+        source_cmake = os.path.join(project_path, "Source", "CMakeLists.txt")
+        if os.path.exists(source_cmake):
+            cmake_values.update(_extract_values_from_file(source_cmake))
+        
+        # Check source files for any additional values
+        source_dir = os.path.join(project_path, "Source")
+        if os.path.exists(source_dir):
+            for file in os.listdir(source_dir):
+                if file.endswith(('.cpp', '.h', '.hpp')):
+                    file_path = os.path.join(source_dir, file)
+                    try:
+                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                            content = f.read()
+                        values = _extract_values_from_content(content)
+                        cmake_values.update(values)
+                    except Exception:
+                        continue
+        
+    except Exception as e:
+        print(f"Warning: Failed to extract CMake values from {project_path}: {e}")
+    
+    return cmake_values
+
+def _extract_values_from_file(file_path: str) -> Dict[str, str]:
+    """Extract values from a single file."""
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+        return _extract_values_from_content(content)
+    except Exception:
+        return {}
+
+def _extract_values_from_content(content: str) -> Dict[str, str]:
+    """Extract placeholder values from file content by analyzing actual values."""
+    values = {}
+    
+    # Common JUCE plugin patterns to extract actual values
+    patterns = {
+        # JUCE plugin configuration
+        r'PRODUCT_NAME\s+"([^"]+)"': '{{PRODUCT_NAME}}',
+        r'COMPANY_NAME\s+"([^"]+)"': '{{COMPANY_NAME}}',
+        r'PLUGIN_MANUFACTURER_CODE\s+([A-Za-z0-9]{4})': '{{PLUGIN_MANUFACTURER_CODE}}',
+        r'PLUGIN_CODE\s+([A-Za-z0-9]{4})': '{{PLUGIN_CODE}}',
+        r'VERSION\s+(\d+\.\d+\.\d+)': '{{PROJECT_VERSION}}',
+        r'project\s*\(\s*([^)\s]+)': '{{PROJECT_NAME}}',
+        
+        # Additional patterns
+        r'DESCRIPTION\s+"([^"]+)"': '{{DESCRIPTION}}',
+        r'PLUGIN_CATEGORY\s+([^\s\n]+)': '{{PLUGIN_CATEGORY}}',
+        r'set\s*\(\s*CMAKE_CXX_STANDARD\s+(\d+)': '{{CXX_STANDARD}}',
+    }
+    
+    for pattern, placeholder in patterns.items():
+        matches = re.finditer(pattern, content, re.IGNORECASE)
+        for match in matches:
+            actual_value = match.group(1).strip().strip('"')
+            if actual_value and placeholder not in values:
+                values[placeholder] = actual_value
+    
+    return values
 
 def copy_and_replace(src, dst, template_name, project_name, cmake_fields=None):
     """Recursively copy src to dst, replacing template_name with project_name in file contents and names. 
@@ -344,6 +484,190 @@ def create_custom_replacements_table(parent):
     
     return tree
 
+def create_project_selector_frame(parent):
+    """Create a frame for selecting existing projects or creating new ones."""
+    global project_mode_var, new_project_frame, existing_project_frame
+    
+    selector_frame = ttk.LabelFrame(parent, text="Project Selection", padding="10")
+    selector_frame.pack(fill="both", expand=True, padx=10, pady=5)
+    
+    # Mode selection
+    mode_frame = ttk.Frame(selector_frame)
+    mode_frame.pack(fill="x", pady=(0, 10))
+    
+    project_mode_var = tk.StringVar(value="new")
+    
+    # Radio buttons for mode selection
+    new_radio = ttk.Radiobutton(mode_frame, text="Create New Project", 
+                               variable=project_mode_var, value="new",
+                               command=lambda: toggle_project_mode("new"))
+    new_radio.pack(anchor="w")
+    
+    existing_radio = ttk.Radiobutton(mode_frame, text="Load Existing Project", 
+                                   variable=project_mode_var, value="existing",
+                                   command=lambda: toggle_project_mode("existing"))
+    existing_radio.pack(anchor="w")
+    
+    # Container for mode-specific content
+    content_frame = ttk.Frame(selector_frame)
+    content_frame.pack(fill="both", expand=True)
+    
+    # New project frame
+    new_project_frame = ttk.Frame(content_frame)
+    
+    ttk.Label(new_project_frame, text="Enter new project name:").pack(anchor="w", pady=(0, 5))
+    global entry  # Make it accessible globally
+    entry = ttk.Entry(new_project_frame, width=40, font=("TkDefaultFont", 10))
+    entry.pack(fill="x", pady=5)
+    entry.focus()
+    
+    # Existing project frame
+    existing_project_frame = ttk.Frame(content_frame)
+    
+    ttk.Label(existing_project_frame, text="Select an existing project:").pack(anchor="w", pady=(0, 5))
+    
+    # Project list with scrollbar
+    list_frame = ttk.Frame(existing_project_frame)
+    list_frame.pack(fill="both", expand=True, pady=5)
+    
+    # Create Treeview for project list
+    columns = ("name", "info")
+    global project_tree  # Make it accessible globally
+    project_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=8)
+    project_tree.heading("name", text="Project Name")
+    project_tree.heading("info", text="Project Info")
+    project_tree.column("name", width=200)
+    project_tree.column("info", width=400)
+    
+    # Scrollbars
+    v_scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=project_tree.yview)
+    h_scrollbar = ttk.Scrollbar(list_frame, orient="horizontal", command=project_tree.xview)
+    project_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+    
+    project_tree.pack(side="left", fill="both", expand=True)
+    v_scrollbar.pack(side="right", fill="y")
+    h_scrollbar.pack(side="bottom", fill="x")
+    
+    # Bind selection event
+    project_tree.bind("<<TreeviewSelect>>", on_project_selected)
+    
+    # Refresh button
+    refresh_btn = ttk.Button(existing_project_frame, text="🔄 Refresh Project List", 
+                           command=refresh_project_list)
+    refresh_btn.pack(anchor="w", pady=(5, 0))
+    
+    # Status label
+    global project_status_label
+    project_status_label = ttk.Label(existing_project_frame, text="", 
+                                   font=("TkDefaultFont", 8), foreground="gray")
+    project_status_label.pack(anchor="w", pady=(2, 0))
+    
+    # Load project button
+    load_btn = ttk.Button(existing_project_frame, text="Load Selected Project", 
+                         command=load_selected_project)
+    load_btn.pack(anchor="w", pady=(5, 0))
+    
+    def toggle_project_mode(mode):
+        """Switch between new and existing project modes."""
+        if mode == "new":
+            existing_project_frame.pack_forget()
+            new_project_frame.pack(fill="both", expand=True)
+            entry.focus()
+        else:
+            new_project_frame.pack_forget()
+            existing_project_frame.pack(fill="both", expand=True)
+            refresh_project_list()
+    
+    # Initially show new project mode
+    toggle_project_mode("new")
+    
+    return selector_frame, project_mode_var
+
+def refresh_project_list():
+    """Refresh the list of existing projects."""
+    # Clear existing items
+    for item in project_tree.get_children():
+        project_tree.delete(item)
+    
+    # Scan for projects
+    projects = scan_existing_projects()
+    
+    if not projects:
+        # Add a message if no projects found
+        project_tree.insert("", "end", values=("No projects found", f"No projects found in {DST_DIR}"))
+        status_text = "No existing projects found"
+    else:
+        # Populate the tree
+        for project_name, project_info in projects:
+            project_tree.insert("", "end", values=(project_name, project_info))
+        status_text = f"Found {len(projects)} existing project(s)"
+    
+    # Update status if we have a status label
+    if 'project_status_label' in globals():
+        project_status_label.config(text=status_text)
+
+def on_project_selected(event):
+    """Handle project selection in the tree."""
+    selection = project_tree.selection()
+    if not selection:
+        return
+    
+    item = selection[0]
+    values = project_tree.item(item)["values"]
+    
+    if values and values[0] != "No projects found":
+        project_name = values[0]
+        # Update status or provide feedback
+        print(f"Selected project: {project_name}")
+
+def load_selected_project():
+    """Load the selected project and populate CMake fields."""
+    selection = project_tree.selection()
+    if not selection:
+        messagebox.showwarning("Warning", "Please select a project to load")
+        return
+    
+    item = selection[0]
+    values = project_tree.item(item)["values"]
+    
+    if not values or values[0] == "No projects found":
+        messagebox.showwarning("Warning", "No valid project selected")
+        return
+    
+    project_name = values[0]
+    project_path = os.path.join(DST_DIR, project_name)
+    
+    try:
+        # Extract CMake values from the project
+        cmake_values = extract_cmake_values_from_project(project_path)
+        
+        if not cmake_values:
+            messagebox.showinfo("Info", f"No CMake values found in project '{project_name}'")
+        
+        # Clear existing replacements table
+        for item in replacements_table.get_children():
+            replacements_table.delete(item)
+        
+        # Populate table with extracted values
+        for placeholder, value in cmake_values.items():
+            replacements_table.insert("", "end", values=(placeholder, value))
+        
+        # Update entry with project name
+        entry.delete(0, tk.END)
+        entry.insert(0, project_name)
+        
+        # Switch to new project mode for editing
+        project_mode_var.set("new")
+        new_project_frame.pack(fill="both", expand=True)
+        existing_project_frame.pack_forget()
+        
+        messagebox.showinfo("Success", 
+                          f"Loaded project '{project_name}' with {len(cmake_values)} CMake values.\n\n"
+                          f"You can now modify the settings and create/update the project.")
+        
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load project '{project_name}':\n\n{str(e)}")
+
 def create_cmake_fields_frame(parent):
     """Create a simplified frame for basic project information."""
     info_frame = ttk.LabelFrame(parent, text="Project Information", padding="10")
@@ -488,14 +812,18 @@ def on_create():
         
     target_dir = os.path.join(DST_DIR, project_name)
     
-    # Check if project already exists
-    if os.path.exists(target_dir):
+    # Determine if this is a new project or updating existing
+    is_existing_project = os.path.exists(target_dir)
+    action_verb = "update" if is_existing_project else "create"
+    
+    # Check if project already exists and confirm action
+    if is_existing_project:
         response = messagebox.askyesno(
             "Project Exists", 
-            f"Project '{project_name}' already exists.\n\nDo you want to overwrite it?"
+            f"Project '{project_name}' already exists.\n\nDo you want to update it with the current settings?"
         )
         if not response:
-            messagebox.showinfo("Info", "Project creation cancelled.")
+            messagebox.showinfo("Info", "Project update cancelled.")
             return
     
     # Get CMake field values including custom replacements
@@ -503,8 +831,24 @@ def on_create():
         cmake_field_values = get_cmake_field_values(cmake_fields, replacements_table)
         cmake_field_values["project_name"] = project_name
         
-        # Create the project
+        # Show what will be updated
+        num_replacements = len(cmake_field_values.get("custom_replacements", {}))
+        if is_existing_project:
+            confirm_msg = (f"About to update project '{project_name}' with:\n"
+                          f"• {num_replacements} CMake replacements\n"
+                          f"• Project type: {project_type_var.get()}\n\n"
+                          f"This will overwrite existing files. Continue?")
+            if not messagebox.askyesno("Confirm Update", confirm_msg):
+                return
+        
+        # Create/update the project
         copy_and_replace(SRC_DIR, target_dir, TEMPLATE_NAME, project_name, cmake_field_values)
+        
+        # Show success message
+        success_msg = f"Project '{project_name}' {action_verb}d successfully!"
+        if is_existing_project:
+            success_msg += f"\n\nUpdated {num_replacements} CMake values."
+        messagebox.showinfo("Success", success_msg)
         
         # Launch UI generator
         run_ui_generator(target_dir)
@@ -513,7 +857,7 @@ def on_create():
         messagebox.showerror("Validation Error", str(e))
         return
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to create project: {e}")
+        messagebox.showerror("Error", f"Failed to {action_verb} project: {e}")
         traceback.print_exc()
         return
 
@@ -521,17 +865,24 @@ if __name__ == "__main__":
     # Initialize main window
     root = tk.Tk()
     root.title("Project Initializer")
-    root.geometry("700x600")
+    root.geometry("900x800")  # Increased size for project list
     root.resizable(True, True)
 
-    # Project name section
-    name_frame = ttk.Frame(root)
-    name_frame.pack(fill="x", padx=10, pady=10)
+    # Create project info frame
+    info_frame = ttk.LabelFrame(root, text="Project Type", padding="10")
+    info_frame.pack(fill="x", padx=10, pady=5)
     
-    ttk.Label(name_frame, text="Enter new project name:").pack(anchor="w", pady=(0, 5))
-    entry = ttk.Entry(name_frame, width=40, font=("TkDefaultFont", 10))
-    entry.pack(fill="x", pady=5)
-    entry.focus()  # Auto-focus the entry field
+    project_type_var = tk.StringVar(value="standard")
+    ttk.Radiobutton(info_frame, text="Standard JUCE Plugin", variable=project_type_var, value="standard").pack(anchor="w")
+    ttk.Radiobutton(info_frame, text="JUCE Plugin with UI Builder", variable=project_type_var, value="with_ui_builder").pack(anchor="w")
+    
+    # Info text
+    info_text = ttk.Label(info_frame, text="UI Builder option includes predefined JUCE controls for common audio plugin interfaces.", 
+                         font=("TkDefaultFont", 8), foreground="gray")
+    info_text.pack(anchor="w", pady=(5, 0))
+
+    # Project selector (replaces simple name entry)
+    project_selector, project_mode_var = create_project_selector_frame(root)
 
     # CMake configuration section (simplified info frame)
     cmake_fields = create_cmake_fields_frame(root)
@@ -543,7 +894,7 @@ if __name__ == "__main__":
     button_frame = ttk.Frame(root)
     button_frame.pack(fill="x", padx=10, pady=15)
     
-    create_btn = ttk.Button(button_frame, text="Create Project", command=on_create)
+    create_btn = ttk.Button(button_frame, text="Create/Update Project", command=on_create)
     create_btn.pack()
 
     # Bind Enter key to create project

@@ -17,9 +17,11 @@ try:
     from .panels.canvas import DragDropCanvas
     from .panels.toolbox import ComponentToolbox
     from .panels.properties import PropertiesPanel
+    from .panels.juce_toolbox import JUCEControlsToolbox, JUCEControlPropertiesPanel
     from .code_generator import CodeGenerator
     from .file_manager import FileManager
     from .panels.gui_properties import GUIProperties, GUIPropertiesPanel
+    from .juce_controls import JUCEControl, JUCEControlFactory, JUCECodeGenerator
 except ImportError as e:
     print(f"Import Error: {e}")
     print("Missing module files. Please ensure all required Python files exist.")
@@ -33,7 +35,7 @@ class UIGeneratorApp:
         try:
             self.root = tk.Tk()
             self.root.title("Audio Plugin GUI Designer")
-            self.root.geometry("1200x800")
+            self.root.geometry("1400x900")  # Increased width for JUCE controls panel
             
             # Initialize GUI properties
             self.gui_properties = GUIProperties()
@@ -44,6 +46,9 @@ class UIGeneratorApp:
             self.filename = None
             
             self.juce_target_dir = juce_target_dir
+            
+            # Initialize JUCE controls list
+            self.juce_controls = []
             
             self._create_menu()
             self._create_layout()
@@ -84,6 +89,13 @@ class UIGeneratorApp:
         view_menu.add_checkbutton(label="Show Grid", command=self.toggle_grid)
         view_menu.add_separator()
         view_menu.add_command(label="GUI Properties", command=self.focus_gui_properties)
+        view_menu.add_command(label="JUCE Controls", command=self.focus_juce_controls)
+        
+        # JUCE menu
+        juce_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="JUCE", menu=juce_menu)
+        juce_menu.add_command(label="Export JUCE Code", command=self.export_juce_code)
+        juce_menu.add_command(label="Clear JUCE Controls", command=self.clear_juce_controls)
         
         # Bind keyboard shortcuts
         self.root.bind('<Control-n>', lambda e: self.new_file())
@@ -97,8 +109,20 @@ class UIGeneratorApp:
         main_frame = ttk.Frame(self.root)
         main_frame.pack(fill='both', expand=True, padx=5, pady=5)
         
-        # Left side - toolbox
-        self.toolbox = ComponentToolbox(main_frame)
+        # Left side - toolboxes in a notebook (tabs)
+        left_panel = ttk.Notebook(main_frame)
+        left_panel.pack(side='left', fill='y', padx=(0, 5))
+        
+        # Original UI components toolbox
+        ui_toolbox_frame = ttk.Frame(left_panel)
+        self.toolbox = ComponentToolbox(ui_toolbox_frame)
+        left_panel.add(ui_toolbox_frame, text="UI Components")
+        
+        # JUCE controls toolbox  
+        juce_toolbox_frame = ttk.Frame(left_panel)
+        self.juce_toolbox = JUCEControlsToolbox(juce_toolbox_frame, self.on_juce_control_selected)
+        self.juce_toolbox.pack(fill="both", expand=True)
+        left_panel.add(juce_toolbox_frame, text="JUCE Controls")
         
         # Center - canvas
         canvas_container = ttk.Frame(main_frame)
@@ -115,21 +139,28 @@ class UIGeneratorApp:
         # Set canvas reference in toolbox
         self.toolbox.canvas = self.canvas_frame
         
-        # Right side - dynamic properties panel container
-        properties_container = ttk.Frame(main_frame)
-        properties_container.pack(side='right', fill='y', padx=5)
+        # Right side - properties panels in a notebook (tabs)
+        right_panel = ttk.Notebook(main_frame)
+        right_panel.pack(side='right', fill='y', padx=(5, 0))
         
-        # Create both panels but initially show only GUI properties
+        # GUI properties panel
+        gui_props_frame = ttk.Frame(right_panel)
         self.gui_properties_panel = GUIPropertiesPanel(
-            properties_container, 
+            gui_props_frame, 
             self.gui_properties, 
             self.on_gui_properties_changed
         )
+        right_panel.add(gui_props_frame, text="GUI Properties")
         
-        self.properties = PropertiesPanel(self, properties_container)
+        # Component properties panel
+        comp_props_frame = ttk.Frame(right_panel)
+        self.properties = PropertiesPanel(self, comp_props_frame)
+        right_panel.add(comp_props_frame, text="Component Props")
         
-        # Initially show GUI properties panel and hide component properties
-        self._show_gui_properties_panel()
+        # JUCE control properties panel
+        juce_props_frame = ttk.Frame(right_panel)
+        self.juce_properties = JUCEControlPropertiesPanel(juce_props_frame)
+        right_panel.add(juce_props_frame, text="JUCE Props")
         
         # Update canvas with initial GUI properties
         self._apply_gui_properties()
@@ -145,14 +176,10 @@ class UIGeneratorApp:
     def on_component_selected(self, component: Component):
         """Handle component selection"""
         if component:
-            # Show component properties panel
-            self._show_component_properties_panel()
             self.properties.update_properties(component)
             self.status_var.set(f"Selected: {component.type} - {component.text}")
         else:
-            # Show GUI properties panel when no component is selected
-            self._show_gui_properties_panel()
-            self.status_var.set("No component selected - Showing GUI properties")
+            self.status_var.set("No component selected")
     
     def show_properties_dialog(self, component: Component):
         """Show properties dialog (for double-click)"""
@@ -167,14 +194,15 @@ class UIGeneratorApp:
             self.canvas_frame.selected_component = None
             self.properties.clear_properties()
             
+            # Clear JUCE controls
+            self.juce_controls.clear()
+            self.juce_properties.update_properties(None)
+            
             # Reset GUI properties
             self.gui_properties = GUIProperties()
             self.gui_properties_panel.gui_properties = self.gui_properties
             self.gui_properties_panel.update_widgets()
             self._apply_gui_properties()
-            
-            # Show GUI properties panel since no components exist
-            self._show_gui_properties_panel()
             
             self.filename = None
             self.root.title("Audio Plugin GUI Designer - Untitled")
@@ -189,7 +217,7 @@ class UIGeneratorApp:
         
         if filename:
             try:
-                components, width, height, gui_properties_data = FileManager.load_design(filename)
+                components, width, height, gui_properties_data, juce_controls = FileManager.load_design(filename)
                 
                 # Clear current design
                 self.canvas_frame.components.clear()
@@ -197,6 +225,11 @@ class UIGeneratorApp:
                 
                 # Load components
                 self.canvas_frame.components = components
+                
+                # Load JUCE controls
+                self.juce_controls = juce_controls
+                for control in self.juce_controls:
+                    self._draw_juce_control_on_canvas(control)
                 
                 # Load GUI properties
                 if gui_properties_data:
@@ -209,7 +242,7 @@ class UIGeneratorApp:
                 
                 self.filename = filename
                 self.root.title(f"Audio Plugin GUI Designer - {os.path.basename(filename)}")
-                self.status_var.set(f"Loaded {len(self.canvas_frame.components)} components")
+                self.status_var.set(f"Loaded {len(self.canvas_frame.components)} components and {len(self.juce_controls)} JUCE controls")
                 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to open file: {str(e)}")
@@ -253,10 +286,11 @@ class UIGeneratorApp:
                 self.canvas_frame.components,
                 actual_drawing_width,
                 actual_drawing_height,
-                self.gui_properties
+                self.gui_properties,
+                self.juce_controls
             )
             
-            self.status_var.set(f"Saved {len(self.canvas_frame.components)} components")
+            self.status_var.set(f"Saved {len(self.canvas_frame.components)} components and {len(self.juce_controls)} JUCE controls")
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save file: {str(e)}")
@@ -381,14 +415,17 @@ class UIGeneratorApp:
     
     def clear_all(self):
         """Clear all components"""
-        if messagebox.askokcancel("Clear All", "Remove all components?"):
+        if messagebox.askokcancel("Clear All", "Remove all components and JUCE controls?"):
             self.canvas_frame.components.clear()
             self.canvas_frame.canvas.delete("all")
             self.canvas_frame.selected_component = None
             self.properties.clear_properties()
-            # Show GUI properties panel since no components remain
-            self._show_gui_properties_panel()
-            self.status_var.set("All components cleared")
+            
+            # Clear JUCE controls
+            self.juce_controls.clear()
+            self.juce_properties.update_properties(None)
+            
+            self.status_var.set("All components and JUCE controls cleared")
     
     def reset_canvas_size(self):
         """Reset canvas to default size"""
@@ -406,7 +443,6 @@ class UIGeneratorApp:
         """Focus on GUI properties panel"""
         # Clear any component selection and show GUI properties
         self.canvas_frame.select_component(None)
-        self._show_gui_properties_panel()
         self.status_var.set("Showing GUI properties panel")
     
     def on_gui_properties_changed(self, gui_properties: 'GUIProperties'):
@@ -436,13 +472,194 @@ class UIGeneratorApp:
     def run(self):
         """Start the application"""
         self.root.mainloop()
-
-    def _show_gui_properties_panel(self):
-        """Show GUI properties panel and hide component properties panel"""
-        self.gui_properties_panel.frame.pack(side='right', fill='y', padx=5, pady=5)
-        self.properties.frame.pack_forget()
     
-    def _show_component_properties_panel(self):
-        """Show component properties panel and hide GUI properties panel"""
-        self.gui_properties_panel.frame.pack_forget()
-        self.properties.frame.pack(side='right', fill='y', padx=5, pady=5)
+    # JUCE Controls Methods
+    def on_juce_control_selected(self, control_type: str, config: dict):
+        """Handle JUCE control selection from toolbox"""
+        try:
+            # Create JUCE control
+            control = JUCEControlFactory.create_control(
+                control_type=control_type,
+                **config
+            )
+            
+            # Add to controls list
+            self.juce_controls.append(control)
+            
+            # Visualize on canvas (simple rectangle for now)
+            self._draw_juce_control_on_canvas(control)
+            
+            # Update properties panel
+            self.juce_properties.update_properties(control)
+            
+            self.status_var.set(f"Added JUCE {control_type}: {control.name}")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add JUCE control: {e}")
+    
+    def _draw_juce_control_on_canvas(self, control: JUCEControl):
+        """Draw a visual representation of the JUCE control on canvas"""
+        # Color coding for different control types
+        colors = {
+            "slider": "#4CAF50",    # Green
+            "button": "#2196F3",    # Blue
+            "label": "#FF9800",     # Orange
+            "combobox": "#9C27B0"   # Purple
+        }
+        
+        color = colors.get(control.control_type, "#607D8B")
+        
+        # Draw rectangle
+        rect_id = self.canvas_frame.canvas.create_rectangle(
+            control.x, control.y,
+            control.x + control.width, control.y + control.height,
+            fill=color, outline="black", width=2,
+            tags=("juce_control", f"juce_{id(control)}")
+        )
+        
+        # Draw text label
+        text_id = self.canvas_frame.canvas.create_text(
+            control.x + control.width // 2,
+            control.y + control.height // 2,
+            text=f"{control.control_type}\n{control.name}",
+            fill="white", font=("TkDefaultFont", 8, "bold"),
+            tags=("juce_control", f"juce_{id(control)}")
+        )
+        
+        # Bind click events
+        self.canvas_frame.canvas.tag_bind(f"juce_{id(control)}", "<Button-1>", 
+                                        lambda e: self.on_juce_control_clicked(control))
+    
+    def on_juce_control_clicked(self, control: JUCEControl):
+        """Handle clicking on a JUCE control"""
+        # Clear any component selection
+        self.canvas_frame.select_component(None)
+        
+        # Update JUCE properties panel
+        self.juce_properties.update_properties(control)
+        
+        self.status_var.set(f"Selected JUCE {control.control_type}: {control.name}")
+    
+    def focus_juce_controls(self):
+        """Focus on JUCE controls tab"""
+        self.status_var.set("Showing JUCE controls toolbox")
+    
+    def export_juce_code(self):
+        """Export JUCE code for all controls"""
+        if not self.juce_controls:
+            messagebox.showwarning("Warning", "No JUCE controls to export")
+            return
+        
+        try:
+            generator = JUCECodeGenerator(self.juce_controls)
+            
+            # Create export dialog
+            export_window = tk.Toplevel(self.root)
+            export_window.title("Export JUCE Code")
+            export_window.geometry("800x600")
+            
+            # Create notebook for different code sections
+            notebook = ttk.Notebook(export_window)
+            notebook.pack(fill='both', expand=True, padx=10, pady=10)
+            
+            # Header declarations
+            header_frame = ttk.Frame(notebook)
+            header_text = tk.Text(header_frame, wrap='none')
+            header_scrollbar_y = ttk.Scrollbar(header_frame, orient='vertical', command=header_text.yview)
+            header_scrollbar_x = ttk.Scrollbar(header_frame, orient='horizontal', command=header_text.xview)
+            header_text.configure(yscrollcommand=header_scrollbar_y.set, xscrollcommand=header_scrollbar_x.set)
+            
+            header_text.insert(1.0, generator.generate_header_declarations())
+            header_text.pack(side='left', fill='both', expand=True)
+            header_scrollbar_y.pack(side='right', fill='y')
+            header_scrollbar_x.pack(side='bottom', fill='x')
+            notebook.add(header_frame, text="Header (.h)")
+            
+            # Constructor code
+            constructor_frame = ttk.Frame(notebook)
+            constructor_text = tk.Text(constructor_frame, wrap='none')
+            constructor_scrollbar_y = ttk.Scrollbar(constructor_frame, orient='vertical', command=constructor_text.yview)
+            constructor_scrollbar_x = ttk.Scrollbar(constructor_frame, orient='horizontal', command=constructor_text.xview)
+            constructor_text.configure(yscrollcommand=constructor_scrollbar_y.set, xscrollcommand=constructor_scrollbar_x.set)
+            
+            constructor_text.insert(1.0, generator.generate_constructor_code())
+            constructor_text.pack(side='left', fill='both', expand=True)
+            constructor_scrollbar_y.pack(side='right', fill='y')
+            constructor_scrollbar_x.pack(side='bottom', fill='x')
+            notebook.add(constructor_frame, text="Constructor (.cpp)")
+            
+            # Resized method
+            resized_frame = ttk.Frame(notebook)
+            resized_text = tk.Text(resized_frame, wrap='none')
+            resized_scrollbar_y = ttk.Scrollbar(resized_frame, orient='vertical', command=resized_text.yview)
+            resized_scrollbar_x = ttk.Scrollbar(resized_frame, orient='horizontal', command=resized_text.xview)
+            resized_text.configure(yscrollcommand=resized_scrollbar_y.set, xscrollcommand=resized_scrollbar_x.set)
+            
+            resized_text.insert(1.0, generator.generate_resized_code())
+            resized_text.pack(side='left', fill='both', expand=True)
+            resized_scrollbar_y.pack(side='right', fill='y')
+            resized_scrollbar_x.pack(side='bottom', fill='x')
+            notebook.add(resized_frame, text="resized() Method")
+            
+            # Parameter layout
+            params_frame = ttk.Frame(notebook)
+            params_text = tk.Text(params_frame, wrap='none')
+            params_scrollbar_y = ttk.Scrollbar(params_frame, orient='vertical', command=params_text.yview)
+            params_scrollbar_x = ttk.Scrollbar(params_frame, orient='horizontal', command=params_text.xview)
+            params_text.configure(yscrollcommand=params_scrollbar_y.set, xscrollcommand=params_scrollbar_x.set)
+            
+            params_code = generator.generate_parameter_layout()
+            if params_code:
+                params_text.insert(1.0, params_code)
+            else:
+                params_text.insert(1.0, "// No parameters to export")
+            params_text.pack(side='left', fill='both', expand=True)
+            params_scrollbar_y.pack(side='right', fill='y')
+            params_scrollbar_x.pack(side='bottom', fill='x')
+            notebook.add(params_frame, text="Parameters")
+            
+            # Buttons
+            btn_frame = ttk.Frame(export_window)
+            btn_frame.pack(fill='x', padx=10, pady=5)
+            
+            def save_to_files():
+                """Save generated code to files"""
+                target_dir = self.juce_target_dir
+                if not target_dir:
+                    target_dir = filedialog.askdirectory(title="Select JUCE Project Directory")
+                    if not target_dir:
+                        return
+                
+                try:
+                    # Save to PluginEditor.h and PluginEditor.cpp
+                    header_file = os.path.join(target_dir, "Source", "PluginEditor.h")
+                    cpp_file = os.path.join(target_dir, "Source", "PluginEditor.cpp")
+                    
+                    messagebox.showinfo("Info", f"Code would be saved to:\n{header_file}\n{cpp_file}\n\n(Integration with existing files not implemented yet)")
+                    
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save files: {e}")
+            
+            ttk.Button(btn_frame, text="Save to Files", command=save_to_files).pack(side='right', padx=5)
+            ttk.Button(btn_frame, text="Close", command=export_window.destroy).pack(side='right')
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export JUCE code: {e}")
+    
+    def clear_juce_controls(self):
+        """Clear all JUCE controls"""
+        if not self.juce_controls:
+            messagebox.showinfo("Info", "No JUCE controls to clear")
+            return
+        
+        if messagebox.askokcancel("Clear JUCE Controls", f"Remove all {len(self.juce_controls)} JUCE controls?"):
+            # Clear from canvas
+            self.canvas_frame.canvas.delete("juce_control")
+            
+            # Clear list
+            self.juce_controls.clear()
+            
+            # Clear properties panel
+            self.juce_properties.update_properties(None)
+            
+            self.status_var.set("All JUCE controls cleared")

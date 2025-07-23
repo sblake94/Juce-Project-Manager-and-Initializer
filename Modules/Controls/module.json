@@ -1,0 +1,11 @@
+{
+    "id": "myawesomeplugincompany_controls",
+    "version": "1.0.0",
+    "name": "MyAwesomePluginCompany Custom Controls",
+    "description": "Common controls reused across MyAwesomePluginCompany plugins.",
+    "vendor": "MyAwesomePluginCompany",
+    "mainHeader": "Controls.h",
+    "dependencies": [ "juce_gui_basics" ],
+    "website": "https://myawesomeplugincompany.com",
+    "license": "MIT"
+}
