@@ -7,10 +7,24 @@ import re
 from typing import Dict, Any, List, Tuple
 from src.UIGeneratorApp import UIGeneratorApp
 
-# Static variables
-SRC_DIR = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/Template/MyCMakeProject"  # Template source
-DST_DIR = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/MyAwesomePlugins"  # Project destination
-TEMPLATE_NAME = "MyCMakeProject"  # The template name to replace in files and filenames
+# ---------------------------------------------------------------------------
+# Configurable paths
+# ---------------------------------------------------------------------------
+# Users can override these defaults by exporting environment variables before
+# launching the tool:
+#   TEMPLATE_SRC_DIR – absolute path to the template CMake project
+#   TEMPLATE_DST_DIR – absolute path where new projects will be created
+# These fall back to the original hard-coded Windows paths to preserve
+# behaviour for existing users. Paths are normalised for cross-platform use.
+
+DEFAULT_SRC = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/Template/MyCMakeProject"
+DEFAULT_DST = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/MyAwesomePlugins"
+
+SRC_DIR = os.path.normpath(os.getenv("TEMPLATE_SRC_DIR", DEFAULT_SRC))
+DST_DIR = os.path.normpath(os.getenv("TEMPLATE_DST_DIR", DEFAULT_DST))
+
+# The template name to replace in files and filenames
+TEMPLATE_NAME = "MyCMakeProject"
 
 def cmake_ready(build_dir: str) -> bool:
     """Check if CMake has been run successfully by looking for CMakeCache.txt."""
