@@ -232,7 +232,7 @@ class AudioPluginApp {
     }
 
     addComponentAtPosition(type, x, y) {
-        const id = `comp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const id = `comp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
         const component = ComponentFactory.createComponent(type, id, Math.round(x), Math.round(y));
         
         this.components.set(id, component);
