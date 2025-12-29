@@ -62,7 +62,11 @@ const Utils = {
      * Format number with specified decimal places
      */
     formatNumber(num, decimals = 2) {
-        return Number(Math.round(num + 'e' + decimals) + 'e-' + decimals);
+        const value = Number(num);
+        if (Number.isNaN(value)) {
+            return NaN;
+        }
+        return Number(value.toFixed(decimals));
     },
 
     /**
