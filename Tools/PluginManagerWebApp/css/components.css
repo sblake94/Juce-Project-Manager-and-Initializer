@@ -1,0 +1,514 @@
+/* Component-specific styles for Audio Plugin Project Manager */
+
+/* Component Icons */
+.component-icon {
+    width: 32px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    position: relative;
+}
+
+/* Horizontal Slider Icon */
+.horizontal-slider-icon::before {
+    content: '';
+    width: 20px;
+    height: 3px;
+    background: linear-gradient(90deg, #0078d4 0%, #106ebe 100%);
+    border-radius: 2px;
+    position: relative;
+}
+
+.horizontal-slider-icon::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 12px;
+    background: #fff;
+    border: 2px solid #0078d4;
+    border-radius: 2px;
+    left: 18px;
+    top: 6px;
+}
+
+/* Vertical Slider Icon */
+.vertical-slider-icon::before {
+    content: '';
+    width: 3px;
+    height: 16px;
+    background: linear-gradient(180deg, #0078d4 0%, #106ebe 100%);
+    border-radius: 2px;
+    position: relative;
+}
+
+.vertical-slider-icon::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 8px;
+    background: #fff;
+    border: 2px solid #0078d4;
+    border-radius: 2px;
+    left: 10px;
+    top: 12px;
+}
+
+/* Knob Icon */
+.knob-icon::before {
+    content: '';
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(circle, #fff 0%, #e9ecef 70%, #0078d4 100%);
+    border-radius: 50%;
+    border: 1px solid #0078d4;
+    position: relative;
+}
+
+.knob-icon::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 8px;
+    background: #0078d4;
+    border-radius: 1px;
+    left: 15px;
+    top: 8px;
+    transform: rotate(45deg);
+}
+
+/* Button Icon */
+.button-icon::before {
+    content: '';
+    width: 20px;
+    height: 12px;
+    background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+    border-radius: 4px;
+    border: 1px solid #1e7e34;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.button-icon::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 1px;
+    background: #fff;
+    left: 7px;
+    top: 6px;
+}
+
+/* Toggle Icon */
+.toggle-icon::before {
+    content: '';
+    width: 20px;
+    height: 10px;
+    background: #28a745;
+    border-radius: 10px;
+    border: 1px solid #1e7e34;
+    position: relative;
+}
+
+.toggle-icon::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    right: 1px;
+    top: 1px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Label Icon */
+.label-icon::before {
+    content: 'Aa';
+    font-size: 10px;
+    font-weight: bold;
+    color: #0078d4;
+    font-family: sans-serif;
+}
+
+/* Text Box Icon */
+.textbox-icon::before {
+    content: '';
+    width: 18px;
+    height: 10px;
+    background: #fff;
+    border: 1px solid #0078d4;
+    border-radius: 2px;
+    position: relative;
+}
+
+.textbox-icon::after {
+    content: '';
+    position: absolute;
+    width: 1px;
+    height: 6px;
+    background: #0078d4;
+    left: 2px;
+    top: 2px;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Meter Icon */
+.meter-icon {
+    background: linear-gradient(135deg, #333 0%, #555 100%);
+}
+
+.meter-icon::before {
+    content: '';
+    width: 3px;
+    height: 16px;
+    background: linear-gradient(180deg, #ff4444 0%, #ffaa44 30%, #44ff44 100%);
+    border-radius: 2px;
+    margin-right: 2px;
+}
+
+.meter-icon::after {
+    content: '';
+    width: 3px;
+    height: 16px;
+    background: linear-gradient(180deg, #ff4444 0%, #ffaa44 30%, #44ff44 100%);
+    border-radius: 2px;
+}
+
+/* ComboBox Icon */
+.combobox-icon::before {
+    content: '';
+    width: 18px;
+    height: 10px;
+    background: #fff;
+    border: 1px solid #0078d4;
+    border-radius: 2px;
+    position: relative;
+}
+
+.combobox-icon::after {
+    content: '▼';
+    position: absolute;
+    font-size: 8px;
+    color: #0078d4;
+    right: 2px;
+    top: 8px;
+}
+
+
+
+/* Canvas Component Rendering */
+.canvas-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.canvas-component {
+    position: absolute;
+    pointer-events: auto;
+    border: 1px solid transparent;
+    transition: border-color 0.2s ease;
+    cursor: move;
+}
+
+.canvas-component:hover {
+    border-color: #0078d4;
+}
+
+.canvas-component.selected {
+    border-color: #0078d4;
+    border-width: 2px;
+    box-shadow: 0 0 0 1px rgba(0, 120, 212, 0.3);
+}
+
+.canvas-component.selected::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 8px;
+    height: 8px;
+    background: #0078d4;
+    border: 1px solid #fff;
+    border-radius: 50%;
+    cursor: se-resize;
+}
+
+/* Component Types on Canvas */
+.canvas-horizontalslider {
+    background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+}
+
+.canvas-horizontalslider::before {
+    content: '';
+    flex: 1;
+    height: 4px;
+    background: #dee2e6;
+    border-radius: 2px;
+    position: relative;
+}
+
+.canvas-horizontalslider::after {
+    content: '';
+    position: absolute;
+    left: 30%;
+    top: 50%;
+    width: 16px;
+    height: 20px;
+    background: #fff;
+    border: 2px solid #0078d4;
+    border-radius: 3px;
+    transform: translate(-50%, -50%);
+}
+
+.canvas-verticalslider {
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 4px;
+}
+
+.canvas-verticalslider::before {
+    content: '';
+    flex: 1;
+    width: 4px;
+    background: #dee2e6;
+    border-radius: 2px;
+    position: relative;
+}
+
+.canvas-verticalslider::after {
+    content: '';
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    width: 20px;
+    height: 16px;
+    background: #fff;
+    border: 2px solid #0078d4;
+    border-radius: 3px;
+    transform: translate(-50%, -50%);
+}
+
+.canvas-knob {
+    background: radial-gradient(circle, #fff 0%, #f8f9fa 70%, #0078d4 100%);
+    border: 2px solid #0078d4;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.canvas-knob::before {
+    content: '';
+    width: 3px;
+    height: 40%;
+    background: #0078d4;
+    border-radius: 2px;
+    transform: rotate(45deg);
+    transform-origin: center bottom;
+}
+
+.canvas-button {
+    background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+    border: 1px solid #1e7e34;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.canvas-button:hover {
+    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+    transform: translateY(-1px);
+}
+
+.canvas-toggle {
+    background: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 20px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 2px;
+}
+
+.canvas-toggle::after {
+    content: '';
+    width: calc(50% - 2px);
+    height: calc(100% - 4px);
+    background: #28a745;
+    border-radius: 50%;
+    position: absolute;
+    right: 2px;
+    transition: all 0.3s ease;
+}
+
+.canvas-toggle.off::after {
+    background: #6c757d;
+    right: calc(50% + 2px);
+}
+
+.canvas-label {
+    background: transparent;
+    border: 1px dashed #dee2e6;
+    color: #333;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+}
+
+.canvas-textbox {
+    background: #fff;
+    border: 1px solid #0078d4;
+    border-radius: 3px;
+    padding: 4px 6px;
+    font-size: 11px;
+    color: #333;
+    position: relative;
+}
+
+.canvas-textbox::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    width: 1px;
+    height: 60%;
+    background: #333;
+    transform: translateY(-50%);
+    animation: blink 1s infinite;
+}
+
+.canvas-meter {
+    background: #333;
+    border: 1px solid #222;
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+}
+
+.canvas-meter::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    right: 2px;
+    bottom: 2px;
+    background: linear-gradient(180deg, 
+        #ff4444 0%, 
+        #ff4444 20%, 
+        #ffaa44 40%, 
+        #ffaa44 60%, 
+        #44ff44 80%, 
+        #44ff44 100%);
+    border-radius: 1px;
+}
+
+.canvas-meter::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    right: 2px;
+    bottom: 60%;
+    background: #333;
+    border-radius: 1px;
+    animation: meterAnimation 2s ease-in-out infinite;
+}
+
+@keyframes meterAnimation {
+    0%, 100% { bottom: 60%; }
+    50% { bottom: 20%; }
+}
+
+/* Component Text Labels */
+.canvas-component .component-label {
+    position: absolute;
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #666;
+    white-space: nowrap;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+/* Drag Indicator */
+.component-item.dragging {
+    opacity: 0.6;
+    transform: rotate(5deg);
+}
+
+.canvas-container.drag-over {
+    background-color: rgba(0, 120, 212, 0.1);
+}
+
+/* Resize Handles */
+.resize-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #0078d4;
+    border: 1px solid #fff;
+    border-radius: 50%;
+    cursor: se-resize;
+}
+
+.resize-handle.se {
+    bottom: -4px;
+    right: -4px;
+}
+
+.resize-handle.nw {
+    top: -4px;
+    left: -4px;
+    cursor: nw-resize;
+}
+
+.resize-handle.ne {
+    top: -4px;
+    right: -4px;
+    cursor: ne-resize;
+}
+
+.resize-handle.sw {
+    bottom: -4px;
+    left: -4px;
+    cursor: sw-resize;
+}

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Plugin Project Manager</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/canvas.css">
+    <link rel="stylesheet" href="css/properties.css">
+</head>
+<body>
+    <!-- Main Application Header -->
+    <header class="app-header">
+        <div class="header-content">
+            <h1>Audio Plugin Project Manager</h1>
+            <div class="header-controls">
+                <button id="newProjectBtn" class="btn btn-primary">New Project</button>
+                <button id="openProjectBtn" class="btn btn-secondary">Open Project</button>
+                <button id="saveProjectBtn" class="btn btn-secondary">Save Project</button>
+                <button id="exportCodeBtn" class="btn btn-accent">Export Code</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Application Container -->
+    <div class="app-container">
+        <!-- Left Panel - Toolboxes -->
+        <div class="left-panel">
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" data-tab="ui-components">Components</button>
+                <button class="tab-btn" data-tab="project-manager">Projects</button>
+            </div>
+
+            <!-- UI Components Toolbox -->
+            <div id="ui-components" class="tab-content active">
+                <div class="toolbox-header">
+                    <h3>UI Components</h3>
+                </div>
+                <div class="component-grid">
+                    <div class="component-item" data-type="horizontalslider">
+                        <div class="component-icon horizontal-slider-icon"></div>
+                        <span>Horizontal Slider</span>
+                    </div>
+                    <div class="component-item" data-type="verticalslider">
+                        <div class="component-icon vertical-slider-icon"></div>
+                        <span>Vertical Slider</span>
+                    </div>
+                    <div class="component-item" data-type="knob">
+                        <div class="component-icon knob-icon"></div>
+                        <span>Knob</span>
+                    </div>
+                    <div class="component-item" data-type="button">
+                        <div class="component-icon button-icon"></div>
+                        <span>Button</span>
+                    </div>
+                    <div class="component-item" data-type="toggle">
+                        <div class="component-icon toggle-icon"></div>
+                        <span>Toggle</span>
+                    </div>
+                    <div class="component-item" data-type="label">
+                        <div class="component-icon label-icon"></div>
+                        <span>Label</span>
+                    </div>
+                    <div class="component-item" data-type="textbox">
+                        <div class="component-icon textbox-icon"></div>
+                        <span>Text Box</span>
+                    </div>
+                    <div class="component-item" data-type="meter">
+                        <div class="component-icon meter-icon"></div>
+                        <span>Meter</span>
+                    </div>
+                    <div class="component-item" data-type="combobox">
+                        <div class="component-icon combobox-icon"></div>
+                        <span>ComboBox</span>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Project Manager -->
+            <div id="project-manager" class="tab-content">
+                <div class="toolbox-header">
+                    <h3>Project Manager</h3>
+                </div>
+                <div class="project-controls">
+                    <div class="form-group">
+                        <label for="projectName">Project Name:</label>
+                        <input type="text" id="projectName" class="form-control" placeholder="Enter project name">
+                    </div>
+                    <div class="form-group">
+                        <label for="projectType">Project Type:</label>
+                        <select id="projectType" class="form-control">
+                            <option value="standard">Standard JUCE Plugin</option>
+                            <option value="with_ui_builder">JUCE Plugin with UI Builder</option>
+                        </select>
+                    </div>
+                    <button id="createProjectBtn" class="btn btn-primary full-width">Create/Update Project</button>
+                </div>
+                <div class="existing-projects">
+                    <h4>Existing Projects</h4>
+                    <div id="projectList" class="project-list">
+                        <!-- Projects will be populated here -->
+                    </div>
+                </div>
+                <div class="cmake-replacements">
+                    <h4>CMake Replacements</h4>
+                    <div id="replacementsList" class="replacements-list">
+                        <!-- CMake replacements table will be here -->
+                    </div>
+                    <button id="addReplacementBtn" class="btn btn-small">Add Replacement</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel - Canvas -->
+        <div class="center-panel">
+            <div class="canvas-header">
+                <div class="canvas-controls">
+                    <button id="toggleGridBtn" class="btn btn-small">Toggle Grid</button>
+                    <button id="clearCanvasBtn" class="btn btn-small">Clear Canvas</button>
+                    <span class="canvas-size-display">Size: <span id="canvasSizeText">400 x 300</span></span>
+                </div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="designCanvas" width="400" height="300"></canvas>
+                <div id="canvasOverlay" class="canvas-overlay">
+                    <!-- Component overlays will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Properties -->
+        <div class="right-panel">
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" data-tab="gui-properties">GUI Properties</button>
+                <button class="tab-btn" data-tab="component-properties">Component Props</button>
+            </div>
+
+            <!-- GUI Properties -->
+            <div id="gui-properties" class="tab-content active">
+                <div class="properties-header">
+                    <h3>GUI Properties</h3>
+                </div>
+                <div class="properties-form">
+                    <div class="form-group">
+                        <label for="canvasWidth">Canvas Width:</label>
+                        <input type="number" id="canvasWidth" class="form-control" value="400" min="200" max="1200">
+                    </div>
+                    <div class="form-group">
+                        <label for="canvasHeight">Canvas Height:</label>
+                        <input type="number" id="canvasHeight" class="form-control" value="300" min="150" max="800">
+                    </div>
+                    <div class="form-group">
+                        <label for="backgroundColor">Background Color:</label>
+                        <input type="color" id="backgroundColor" class="form-control" value="#DDDDDD">
+                    </div>
+                    <div class="form-group">
+                        <label for="pluginName">Plugin Name:</label>
+                        <input type="text" id="pluginName" class="form-control" placeholder="My Audio Plugin">
+                    </div>
+                    <div class="form-group">
+                        <label for="pluginManufacturer">Manufacturer:</label>
+                        <input type="text" id="pluginManufacturer" class="form-control" placeholder="MyCompany">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Component Properties -->
+            <div id="component-properties" class="tab-content">
+                <div class="properties-header">
+                    <h3>Component Properties</h3>
+                </div>
+                <div id="componentPropertiesForm" class="properties-form">
+                    <div class="no-selection">
+                        <p>Select a component to edit its properties</p>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <footer class="status-bar">
+        <div class="status-content">
+            <span id="statusText">Ready - Add components from the toolbox</span>
+            <span id="mouseCoords" class="mouse-coords">X: 0, Y: 0</span>
+        </div>
+    </footer>
+
+    <!-- Modals -->
+    <div id="newProjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Project</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Clear current design and start a new project?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary cancel-btn">Cancel</button>
+                <button class="btn btn-primary confirm-btn">Create New</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Export Code</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="export-options">
+                    <label>
+                        <input type="radio" name="exportFormat" value="juce" checked>
+                        JUCE C++ Code
+                    </label>
+                    <label>
+                        <input type="radio" name="exportFormat" value="json">
+                        JSON Project File
+                    </label>
+                    <label>
+                        <input type="radio" name="exportFormat" value="xml">
+                        XML Export
+                    </label>
+                </div>
+                <textarea id="exportOutput" class="export-output" readonly></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary cancel-btn">Close</button>
+                <button class="btn btn-primary" id="downloadExportBtn">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/canvas.js"></script>
+    <script src="js/properties.js"></script>
+    <script src="js/project-manager.js"></script>
+    <script src="js/juce-generator.js"></script>
+    <script src="js/file-manager.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
