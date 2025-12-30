@@ -500,11 +500,11 @@ class AudioPluginApp {
         const exportOutput = document.getElementById('exportOutput');
         
         if (selectedFormat === 'juce' && window.JUCECodeGenerator) {
-            exportOutput.value = JUCECodeGenerator.generateCode(this.components, this.guiProperties);
+            exportOutput.value = window.JUCECodeGenerator.generateCode(this.components, this.guiProperties);
         } else if (selectedFormat === 'json' && window.FileManager) {
-            exportOutput.value = FileManager.exportToJSON(this.components, this.guiProperties);
+            exportOutput.value = window.FileManager.exportToJSON(this.components, this.guiProperties);
         } else if (selectedFormat === 'xml' && window.FileManager) {
-            exportOutput.value = FileManager.exportToXML(this.components, this.guiProperties);
+            exportOutput.value = window.FileManager.exportToXML(this.components, this.guiProperties);
         } else {
             exportOutput.value = '// Code generation not available yet';
         }
