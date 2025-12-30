@@ -9,7 +9,6 @@ namespace ProjectManager.Backend.Controllers
         [HttpPost(nameof(Handshake))]
         public IActionResult Handshake()
         {
-            //return NotFound(); 
             return Ok("Handshake successful");
         }
     }
