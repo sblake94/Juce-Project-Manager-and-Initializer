@@ -35,7 +35,37 @@
     </style>
 </head>
 <body>
-    <div class="plugin-gui">
+    <div id="notification" style="display:none;color:#fff;background:#c0392b;padding:16px 24px;border-radius:8px;box-shadow:0 2px 8px #000a;position:absolute;top:32px;z-index:10;font-size:1.2rem;"></div>
+    <div id="main-content" style="display:none;">
+        <div class="plugin-gui"></div>
     </div>
 </body>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    const notification = document.getElementById('notification');
+    const mainContent = document.getElementById('main-content');
+    fetch('https://localhost:5005/api/ProjectApi/Handshake', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json().catch(() => null);
+    })
+    .then(data => {
+        mainContent.style.display = '';
+    })
+    .catch(error => {
+        notification.textContent = 'Handshake failed: ' + (error.message || error);
+        notification.style.display = 'block';
+        console.error('Handshake error:', error);
+    });
+});
+</script>
 </html>

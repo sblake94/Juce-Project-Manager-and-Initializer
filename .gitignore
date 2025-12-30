@@ -39,6 +39,10 @@ coverage.xml
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# C# ASP.NET build output (ProjectManager.Backend)
+Tools/ProjectManager.Backend/ProjectManager.Backend/bin/
+Tools/ProjectManager.Backend/ProjectManager.Backend/obj/
+
 # Logs
 logs/
 *.log
