@@ -258,13 +258,24 @@ class ComponentRenderer {
         ctx.restore();
     }
 
+    // Safely normalize a value to [0, 1] based on min/max.
+    // Returns 0 when range is invalid (e.g., max <= min) to avoid divide-by-zero.
+    static normalizeValue(value, min, max) {
+        const range = max - min;
+        if (!Number.isFinite(range) || range <= 0) return 0;
+        const normalized = (value - min) / range;
+        if (!Number.isFinite(normalized)) return 0;
+        return Math.min(Math.max(normalized, 0), 1);
+    }
+
     static renderHorizontalSlider(ctx, comp) {
         // Background track
         ctx.fillStyle = comp.color;
         ctx.fillRect(comp.x, comp.y + comp.height/2 - 2, comp.width, 4);
         
         // Thumb
-        const thumbX = comp.x + (comp.defaultValue / (comp.maxValue - comp.minValue)) * comp.width - 8;
+        const norm = this.normalizeValue(comp.defaultValue, comp.minValue, comp.maxValue);
+        const thumbX = comp.x + norm * comp.width - 8;
         ctx.fillStyle = comp.thumbColor;
         ctx.strokeStyle = comp.sliderColor;
         ctx.lineWidth = 2;
@@ -278,7 +289,8 @@ class ComponentRenderer {
         ctx.fillRect(comp.x + comp.width/2 - 2, comp.y, 4, comp.height);
         
         // Thumb
-        const thumbY = comp.y + comp.height - (comp.defaultValue / (comp.maxValue - comp.minValue)) * comp.height - 8;
+        const norm = this.normalizeValue(comp.defaultValue, comp.minValue, comp.maxValue);
+        const thumbY = comp.y + comp.height - norm * comp.height - 8;
         ctx.fillStyle = comp.thumbColor;
         ctx.strokeStyle = comp.sliderColor;
         ctx.lineWidth = 2;
@@ -301,7 +313,8 @@ class ComponentRenderer {
         ctx.stroke();
         
         // Pointer
-        const angle = (comp.defaultValue / (comp.maxValue - comp.minValue)) * Math.PI * 1.5 - Math.PI * 0.75;
+        const norm = this.normalizeValue(comp.defaultValue, comp.minValue, comp.maxValue);
+        const angle = norm * Math.PI * 1.5 - Math.PI * 0.75;
         const pointerX = centerX + Math.cos(angle) * (radius - 8);
         const pointerY = centerY + Math.sin(angle) * (radius - 8);
         
