@@ -17,14 +17,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
-app.MapControllers();
-
 app.UseCors(builder =>
-    builder.WithOrigins("http://localhost:8000")
+    builder.AllowAnyOrigin()
            .AllowAnyHeader()
            .AllowAnyMethod()
 );
 
+app.UseAuthorization();
+
+app.MapControllers();
 app.Run();
