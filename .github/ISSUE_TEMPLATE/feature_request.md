@@ -10,6 +10,6 @@ assignees: sblake94
 **Description:**
 A clear and concise description of what you want to happen.
 
-**AC's:**
+**ACs:**
 A list of assessment criteria to assess the FR's completion. Must be written like the following example:
 - [ ] Must have a red circle in the centre of the screen
