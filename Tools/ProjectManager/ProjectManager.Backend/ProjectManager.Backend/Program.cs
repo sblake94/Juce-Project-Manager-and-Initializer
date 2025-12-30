@@ -7,8 +7,6 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddCors();
 
-builder.WebHost.UseUrls("https://localhost:5005", "http://localhost:5004");
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
