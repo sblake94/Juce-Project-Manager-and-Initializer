@@ -15,7 +15,7 @@ from src.UIGeneratorApp import UIGeneratorApp
 #   TEMPLATE_SRC_DIR – absolute path to the template CMake project
 #   TEMPLATE_DST_DIR – absolute path where new projects will be created
 # These fall back to the original hard-coded Windows paths to preserve
-# behaviour for existing users. Paths are normalised for cross-platform use.
+# behavior for existing users. Paths are normalized for cross-platform use.
 
 DEFAULT_SRC = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/Template/MyCMakeProject"
 DEFAULT_DST = r"D:/Dev/Visual Studio Projects/AudioPlugins/MyAwesomePluginCompany/MyAwesomePlugins"
