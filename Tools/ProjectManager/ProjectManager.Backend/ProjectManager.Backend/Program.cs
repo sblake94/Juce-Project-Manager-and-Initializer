@@ -23,7 +23,5 @@ app.UseCors(builder =>
            .AllowAnyMethod()
 );
 
-app.UseAuthorization();
-
 app.MapControllers();
 app.Run();
