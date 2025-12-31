@@ -18,7 +18,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors(builder =>
-    builder.AllowAnyOrigin()
+    builder.WithOrigins("http://localhost:8000")
            .AllowAnyHeader()
            .AllowAnyMethod()
 );
