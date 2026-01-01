@@ -109,3 +109,4 @@ DerivedData/
 
 # Keep these files even if they match patterns above
 !Tools/requirements.txt
+Tools/ProjectManager/ProjectManager.Backend/ProjectManager.Backend/obj/
