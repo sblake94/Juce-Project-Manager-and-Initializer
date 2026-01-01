@@ -18,7 +18,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors(builder =>
-    builder.WithOrigins("https://localhost:7296", "http://localhost:8000")
+    // 8000 is the port on which the web app is being run, although this isn't configurable yet
+    builder.WithOrigins("http://localhost:8000")
            .AllowAnyHeader()
            .AllowAnyMethod()
 );
