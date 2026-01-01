@@ -138,6 +138,10 @@ window.addEventListener('DOMContentLoaded', () => {
         pluginGuiCanvas.classList.add('drop-active');
     });
     pluginGuiCanvas.addEventListener('dragleave', (e) => {
+        // Only treat as a real leave if the new target is outside the canvas
+        if (e.relatedTarget && pluginGuiCanvas.contains(e.relatedTarget)) {
+            return;
+        }
         pluginGuiCanvas.classList.remove('drop-active');
     });
     pluginGuiCanvas.addEventListener('drop', (e) => {
