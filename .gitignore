@@ -41,6 +41,7 @@ coverage.xml
 
 # C# ASP.NET build output (ProjectManager.Backend)
 Tools/ProjectManager.Backend/ProjectManager.Backend/bin/
+Tools/ProjectManager.Backend/ProjectManager.Backend/obj/
 *.csproj.user
 
 
