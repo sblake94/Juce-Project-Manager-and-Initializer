@@ -42,6 +42,8 @@ coverage.xml
 # C# ASP.NET build output (ProjectManager.Backend)
 Tools/ProjectManager.Backend/ProjectManager.Backend/bin/
 Tools/ProjectManager.Backend/ProjectManager.Backend/obj/
+*.csproj.user
+
 
 # Logs
 logs/
@@ -113,8 +115,4 @@ DerivedData/
 
 # Keep these files even if they match patterns above
 !Tools/requirements.txt
-Tools/ProjectManager/ProjectManager.Backend/ProjectManager.Backend/obj/project.assets.json
-Tools/ProjectManager/ProjectManager.Backend/ProjectManager.Backend/obj/project.nuget.cache
-Tools/ProjectManager/ProjectManager.Backend/ProjectManager.Backend/obj/ProjectManager.Backend.csproj.nuget.dgspec.json
-Tools/ProjectManager/ProjectManager.Backend/ProjectManager.Backend/obj/ProjectManager.Backend.csproj.nuget.g.props
-Tools/ProjectManager/ProjectManager.Backend/ProjectManager.Backend/obj/ProjectManager.Backend.csproj.nuget.g.targets
+Tools/ProjectManager/ProjectManager.Backend/ProjectManager.Backend/obj/
