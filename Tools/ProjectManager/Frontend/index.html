@@ -10,13 +10,75 @@
             height: 100vh;
             width: 100vw;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            align-items: stretch;
+            justify-content: flex-start;
             background-color: #23272e;
             background-image:
                 linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px),
                 linear-gradient(180deg, rgba(255,255,255,0.07) 1px, transparent 1px);
             background-size: 32px 32px;
+        }
+        .sidebar {
+            width: 220px;
+            background: #181a20;
+            color: #fff;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.2s;
+            overflow: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 100;
+        }
+        .sidebar.collapsed {
+            width: 36px;
+        }
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px 12px 8px 8px;
+            align-self: flex-end;
+        }
+        .sidebar-content {
+            flex: 1;
+            padding: 16px 8px 8px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .component-item {
+            background: #23272e;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            cursor: grab;
+            user-select: none;
+            border: 1px solid #444;
+            transition: background 0.2s;
+        }
+        .component-item:active {
+            background: #333b44;
+        }
+        .knob-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 60% 40%, #f5c542 70%, #b89c2c 100%);
+            border: 2px solid #b89c2c;
+            margin-right: 12px;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .plugin-gui {
             width: 400px;
@@ -24,20 +86,31 @@
             background: #888888;
             border-radius: 0px;
             box-shadow: 0 4px 32px rgba(0,0,0,0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 1.5rem;
-            color: #23272e;
+            position: relative;
             border: 3px solid #23272e;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        .plugin-gui.drop-active {
+            border-color: #f5c542;
+            box-shadow: 0 0 0 4px #f5c54255, 0 4px 32px rgba(0,0,0,0.25);
         }
     </style>
 </head>
 <body>
     <div id="notification" style="display:none;color:#fff;background:#c0392b;padding:16px 24px;border-radius:8px;box-shadow:0 2px 8px #000a;position:absolute;top:32px;z-index:10;font-size:1.2rem;"></div>
-    <div id="main-content" style="display:none;">
-        <div class="plugin-gui"></div>
+    <div id="main-content" style="display:none; height: 100vh; width: 100vw; position: relative;">
+        <div class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">&#9776;</button>
+            <div class="sidebar-content">
+                <div class="component-item" draggable="true" id="knobComponent">
+                    <div class="knob-icon"></div>
+                    <span class="component-label">Knob</span>
+                </div>
+            </div>
+        </div>
+        <div class="main-content" style="height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center;">
+            <div class="plugin-gui" id="pluginGuiCanvas"></div>
+        </div>
     </div>
 </body>
 
@@ -45,6 +118,47 @@
 window.addEventListener('DOMContentLoaded', () => {
     const notification = document.getElementById('notification');
     const mainContent = document.getElementById('main-content');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const knobComponent = document.getElementById('knobComponent');
+    const pluginGuiCanvas = document.getElementById('pluginGuiCanvas');
+
+    // Sidebar collapse/expand
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+    });
+
+    // Drag and drop for Knob
+    knobComponent.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('component', 'knob');
+    });
+
+    pluginGuiCanvas.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        pluginGuiCanvas.classList.add('drop-active');
+    });
+    pluginGuiCanvas.addEventListener('dragleave', (e) => {
+        pluginGuiCanvas.classList.remove('drop-active');
+    });
+    pluginGuiCanvas.addEventListener('drop', (e) => {
+        e.preventDefault();
+        pluginGuiCanvas.classList.remove('drop-active');
+        const type = e.dataTransfer.getData('component');
+        if (type === 'knob') {
+            const rect = pluginGuiCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left - 20;
+            const y = e.clientY - rect.top - 20;
+            const knob = document.createElement('div');
+            knob.className = 'knob-icon';
+            knob.style.position = 'absolute';
+            knob.style.left = x + 'px';
+            knob.style.top = y + 'px';
+            knob.title = 'Knob';
+            pluginGuiCanvas.appendChild(knob);
+        }
+    });
+
+    // Handshake logic
     fetch('https://localhost:7296/api/ProjectApi/Handshake', {
         method: 'POST',
         headers: {
