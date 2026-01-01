@@ -39,6 +39,11 @@ coverage.xml
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# C# ASP.NET build output (ProjectManager.Backend)
+Tools/ProjectManager.Backend/ProjectManager.Backend/bin/
+*.csproj.user
+
+
 # Logs
 logs/
 *.log
@@ -109,4 +114,3 @@ DerivedData/
 
 # Keep these files even if they match patterns above
 !Tools/requirements.txt
-Tools/ProjectManager/ProjectManager.Backend/ProjectManager.Backend/obj/

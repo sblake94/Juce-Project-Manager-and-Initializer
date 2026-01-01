@@ -1,0 +1,28 @@
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddControllers();
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
+builder.Services.AddCors();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+app.UseHttpsRedirection();
+
+app.UseCors(builder =>
+    // 8000 is the port on which the web app is being run, although this isn't configurable yet
+    builder.WithOrigins("http://localhost:8000")
+           .AllowAnyHeader()
+           .AllowAnyMethod()
+);
+
+app.MapControllers();
+app.Run();

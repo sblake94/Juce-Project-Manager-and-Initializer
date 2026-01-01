@@ -1,0 +1,6 @@
+@ProjectManager.Backend_HostAddress = http://localhost:5269
+
+POST {{ProjectManager.Backend_HostAddress}}/api/ProjectApi/Handshake
+Accept: application/json
+
+###
