@@ -150,8 +150,10 @@ window.addEventListener('DOMContentLoaded', () => {
         const type = e.dataTransfer.getData('component');
         if (type === 'knob') {
             const rect = pluginGuiCanvas.getBoundingClientRect();
-            const x = e.clientX - rect.left - 20;
-            const y = e.clientY - rect.top - 20;
+            // Center the dropped knob under the cursor by offsetting with half the knob size
+            const knobRect = knobComponent.getBoundingClientRect();
+            const x = e.clientX - rect.left - knobRect.width / 2;
+            const y = e.clientY - rect.top - knobRect.height / 2;
             const knob = document.createElement('div');
             knob.className = 'knob-icon';
             knob.style.position = 'absolute';
