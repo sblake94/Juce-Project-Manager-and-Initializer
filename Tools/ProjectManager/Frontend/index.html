@@ -68,4 +68,23 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
+<script type="module">
+import { createComponentOnCanvas } from './componentFactory.js';
+
+// Example: Add drag-and-drop for a knob (if you have a sidebar or similar UI)
+const pluginGuiCanvas = document.querySelector('.plugin-gui');
+if (pluginGuiCanvas) {
+    pluginGuiCanvas.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+    pluginGuiCanvas.addEventListener('drop', (e) => {
+        e.preventDefault();
+        // For demonstration, always create a knob at drop position
+        const rect = pluginGuiCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left - 20;
+        const y = e.clientY - rect.top - 20;
+        createComponentOnCanvas('knob', x, y, pluginGuiCanvas);
+    });
+}
+</script>
 </html>
