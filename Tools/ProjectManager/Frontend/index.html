@@ -166,6 +166,38 @@ window.addEventListener('DOMContentLoaded', () => {
             knob.style.left = x + 'px';
             knob.style.top = y + 'px';
             knob.title = 'Knob';
+            // Make knob keyboard-focusable and interactive
+            knob.setAttribute('tabindex', '0');
+            knob.setAttribute('role', 'button');
+            knob.setAttribute('aria-label', 'Knob control');
+            knob.addEventListener('keydown', (event) => {
+                const step = 2; // px movement per key press
+                const key = event.key;
+                let left = parseInt(knob.style.left || '0', 10);
+                let top = parseInt(knob.style.top || '0', 10);
+
+                if (key === 'Delete' || key === 'Backspace') {
+                    event.preventDefault();
+                    if (knob.parentElement) {
+                        knob.parentElement.removeChild(knob);
+                    }
+                    return;
+                }
+
+                if (key === 'ArrowLeft') {
+                    event.preventDefault();
+                    knob.style.left = (left - step) + 'px';
+                } else if (key === 'ArrowRight') {
+                    event.preventDefault();
+                    knob.style.left = (left + step) + 'px';
+                } else if (key === 'ArrowUp') {
+                    event.preventDefault();
+                    knob.style.top = (top - step) + 'px';
+                } else if (key === 'ArrowDown') {
+                    event.preventDefault();
+                    knob.style.top = (top + step) + 'px';
+                }
+            });
             pluginGuiCanvas.appendChild(knob);
         }
     });
