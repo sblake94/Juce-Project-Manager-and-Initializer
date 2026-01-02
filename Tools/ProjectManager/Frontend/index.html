@@ -107,6 +107,11 @@
             border-color: #f5c542;
             box-shadow: 0 0 0 4px #f5c54255, 0 4px 32px rgba(0,0,0,0.25);
         }
+        .highlight-border {
+            outline: 2px solid #42c5f5 !important;
+            outline-offset: 2px !important;
+            box-shadow: none !important;
+        }
     </style>
 </head>
 <body>
@@ -130,6 +135,20 @@
 </body>
 
 <script>
+// Selection/highlight logic
+function highlightSelectedComponent(target) {
+    // Remove highlight from all components
+    const allKnobs = pluginGuiCanvas.querySelectorAll('.knob-icon');
+    allKnobs.forEach(k => k.classList.remove('highlight-border'));
+    // Add highlight to the selected one
+    target.classList.add('highlight-border');
+}
+
+function deselectAllComponents() {
+    const allKnobs = pluginGuiCanvas.querySelectorAll('.knob-icon');
+    allKnobs.forEach(k => k.classList.remove('highlight-border'));
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     const notification = document.getElementById('notification');
     const mainContent = document.getElementById('main-content');
@@ -137,6 +156,13 @@ window.addEventListener('DOMContentLoaded', () => {
     const sidebarToggle = document.getElementById('sidebarToggle');
     const knobComponent = document.getElementById('knobComponent');
     const pluginGuiCanvas = document.getElementById('pluginGuiCanvas');
+
+    // ESC key to deselect any selected component
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            deselectAllComponents();
+        }
+    });
 
     // Sidebar collapse/expand
     sidebarToggle.addEventListener('click', () => {
@@ -186,6 +212,59 @@ window.addEventListener('DOMContentLoaded', () => {
             knob.setAttribute('tabindex', '0');
             knob.setAttribute('role', 'button');
             knob.setAttribute('aria-label', 'Knob control');
+
+            
+
+            knob.addEventListener('mousedown', (event) => {
+                highlightSelectedComponent(knob);
+                // Drag-to-move logic
+                let startX = event.clientX;
+                let startY = event.clientY;
+                let origLeft = parseInt(knob.style.left || '0', 10);
+                let origTop = parseInt(knob.style.top || '0', 10);
+                let dragging = false;
+
+
+                function onMouseMove(e) {
+                    if (!dragging) {
+                        dragging = true;
+                        document.body.style.userSelect = 'none';
+                    }
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    let newLeft = origLeft + dx;
+                    let newTop = origTop + dy;
+                    // Constrain within canvas
+                    const canvasRect = pluginGuiCanvas.getBoundingClientRect();
+                    const knobRect = knob.getBoundingClientRect();
+                    const knobWidth = knob.offsetWidth;
+                    const knobHeight = knob.offsetHeight;
+                    // Calculate min/max positions relative to canvas
+                    const minLeft = 0;
+                    const minTop = 0;
+                    const maxLeft = pluginGuiCanvas.clientWidth - knobWidth;
+                    const maxTop = pluginGuiCanvas.clientHeight - knobHeight;
+                    newLeft = Math.max(minLeft, Math.min(newLeft, maxLeft));
+                    newTop = Math.max(minTop, Math.min(newTop, maxTop));
+                    knob.style.left = newLeft + 'px';
+                    knob.style.top = newTop + 'px';
+                }
+
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    document.body.style.userSelect = '';
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            knob.addEventListener('focus', (event) => {
+                highlightSelectedComponent(knob);
+            });
+            
+
             knob.addEventListener('keydown', (event) => {
                 const step = 2; // px movement per key press
                 const key = event.key;
@@ -202,19 +281,39 @@ window.addEventListener('DOMContentLoaded', () => {
 
                 if (key === 'ArrowLeft') {
                     event.preventDefault();
-                    knob.style.left = (left - step) + 'px';
+                    let newLeft = left - step;
+                    newLeft = Math.max(0, newLeft);
+                    knob.style.left = newLeft + 'px';
                 } else if (key === 'ArrowRight') {
                     event.preventDefault();
-                    knob.style.left = (left + step) + 'px';
+                    let newLeft = left + step;
+                    const maxLeft = pluginGuiCanvas.clientWidth - knob.offsetWidth;
+                    newLeft = Math.min(maxLeft, newLeft);
+                    knob.style.left = newLeft + 'px';
                 } else if (key === 'ArrowUp') {
                     event.preventDefault();
-                    knob.style.top = (top - step) + 'px';
+                    let newTop = top - step;
+                    newTop = Math.max(0, newTop);
+                    knob.style.top = newTop + 'px';
                 } else if (key === 'ArrowDown') {
                     event.preventDefault();
-                    knob.style.top = (top + step) + 'px';
+                    let newTop = top + step;
+                    const maxTop = pluginGuiCanvas.clientHeight - knob.offsetHeight;
+                    newTop = Math.min(maxTop, newTop);
+                    knob.style.top = newTop + 'px';
                 }
             });
+
+            
             pluginGuiCanvas.appendChild(knob);
+
+        // Deselect all components when clicking on the canvas background
+        pluginGuiCanvas.addEventListener('mousedown', function(event) {
+            // Only deselect if the click is directly on the canvas, not on a child
+            if (event.target === pluginGuiCanvas) {
+                deselectAllComponents();
+            }
+        });
         }
     });
 
@@ -241,5 +340,44 @@ window.addEventListener('DOMContentLoaded', () => {
         console.error('Handshake error:', error);
     });
 });
+</script>
+
+<script type="module">
+import { selectComponent, deselectAll } from './selectionManager.js';
+
+// Replace previous global ESC handler and canvas deselect with unified manager
+const pluginGuiCanvas = document.getElementById('pluginGuiCanvas');
+
+// ESC key to deselect any selected component
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        deselectAll(pluginGuiCanvas);
+    }
+});
+
+// Deselect when clicking on canvas background
+pluginGuiCanvas.addEventListener('mousedown', function(event) {
+    if (event.target === pluginGuiCanvas) {
+        deselectAll(pluginGuiCanvas);
+    }
+});
+
+// Observe added knobs and wire selection handlers
+const observer = new MutationObserver((mutations) => {
+    for (const mut of mutations) {
+        for (const node of mut.addedNodes) {
+            if (node.nodeType === 1 && node.classList.contains('knob-icon')) {
+                node.setAttribute('tabindex', '0');
+                node.setAttribute('role', 'button');
+                node.setAttribute('aria-label', 'Knob control');
+
+                node.addEventListener('mousedown', () => selectComponent(node, pluginGuiCanvas));
+                node.addEventListener('focus', () => selectComponent(node, pluginGuiCanvas));
+            }
+        }
+    }
+});
+observer.observe(pluginGuiCanvas, { childList: true });
+
 </script>
 </html>
